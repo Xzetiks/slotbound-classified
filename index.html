@@ -1001,6 +1001,7 @@ footer {
 .guide-table {text-align:left}
 .guide-table th,.guide-table td {white-space:normal;text-align:left;min-width:4.5rem}
 .guide-table th {background:var(--deep)}
+.guide-table th.guide-rowgroup {position:static;color:var(--gold);text-align:left}
 .game-art {display:inline-block;object-fit:contain;image-rendering:pixelated;vertical-align:middle;flex:none}
 .art-inline {width:1.35em;height:1.35em;margin-inline-end:.2em;vertical-align:-.27em}
 .entity-mention {display:inline}
@@ -2646,25 +2647,28 @@ globalThis.SlotGuideHits = [
   {
     id:"area-basic-imprints", section:"hits",
     title:["Which imprints work on area and explosive basic attacks?","Які відбитки працюють із базовими атаками по площі та вибухами?"],
-    body:["The ten units below deal area or explosive damage even when their basic attack hits a single enemy. Magnus’s Ruin Tremor skill shares most of their imprint interactions.",
-      "Базові атаки десяти юнітів із таблиці завдають шкоди по площі або вибухом навіть по одному ворогу. Для вміння Ruin Tremor у Magnus діє більшість тих самих правил."],
+    body:["All ten units use area or explosive basic attacks, even against one enemy. Eight have a separate damaging skill. The two spearmen extend their basic attacks instead, and the target order matters.",
+      "Усі десять юнітів завдають базовими атаками шкоди по площі або вибухом, навіть по одному ворогу. У вісьмох уміння завдає окремого удару. У двох списників воно подовжує базову атаку, і спрацювання залежать від того, у яку ціль влучив спис."],
     grid:{
-      headers:[["Unit","Юніт"],["Basic hit type","Тип базового влучання"],["Pierce imprint","Відбиток Pierce"]],
+      headers:[["Unit","Юніт"],["Basic hit","Базове влучання"],["Pierce imprint on basics","Відбиток Pierce на базових атаках"],["Skill","Уміння"]],
+      groupStarts:{0:["Separate skill hits","Уміння завдає окремого удару"],8:["Extended basic attacks","Уміння подовжує базову атаку"]},
       rows:[
-        ["Magnus",false,false],["Grenadier",true,false],["Demolitionist",true,false],
-        ["Spear Adept",false,true],["Lance Master",false,true],["Steppe Cavalry",false,true],["Centaur",false,true],
-        ["Victor",false,true],["Fallen Angel",false,true],["Angel of Ruin",false,true]
-      ].map(([name,explosion,pierces])=>[[name,name],explosion?["Explosion","Вибух"]:["Area damage","Шкода по площі"],
-        pierces?["Pierces extra targets","Пробиває додаткові цілі"]:["No extra hits","Без додаткових влучань"]])
+        ["Grenadier","Timed Keg",true,false],["Demolitionist","Concussion Bomb",true,false],
+        ["Steppe Cavalry","Call of the Plains",false,true],["Centaur","Wild Stampede",false,true],
+        ["Fallen Angel","Rupturing Descent",false,true],["Angel of Ruin","Doom Resonance",false,true],
+        ["Victor","Volt Saw",false,true],["Magnus","Ruin Tremor",false,false],
+        ["Spear Adept","Lance Extension",false,true],["Lance Master","Peerless Spear",false,true]
+      ].map(([name,skill,explosion,pierces])=>[[name,name],explosion?["Explosion","Вибух"]:["Area damage","Шкода по площі"],
+        pierces?["Pierces extra targets","Пробиває додаткові цілі"]:["No extra hits","Без додаткових влучань"],[skill,skill]])
     },
     facts:[
-      [["Both basic attacks and Ruin Tremor","І базові атаки, і Ruin Tremor"],["Hits can trigger Bash, Blind, Chain, Chill, Poison, Timeless and Transfer. Kills can activate Overdrive. Lifesteal V restores 4 HP per 100 damage dealt, compared with 12 HP on a standard single-target basic hit.","Влучання можуть запустити Bash, Blind, Chain, Chill, Poison, Timeless і Transfer. Убивство може активувати Overdrive. Lifesteal V відновлює 4 HP за 100 шкоди. Для порівняння, звичайне одиночне базове влучання відновлює 12 HP."]],
-      [["Basic attacks only","Лише базові атаки"],["Knockback and Shrink work on the listed units’ basic attacks, including Magnus’s swing. Neither triggers from Ruin Tremor.","Knockback і Shrink працюють від базових атак усіх юнітів у таблиці, зокрема від замаху Magnus. Ruin Tremor їх не запускає."]],
-      [["Neither hit type","Не спрацьовують в обох випадках"],["Earthquake, Execute, Fear, Meteor, Skyward Strike and Soul Split.","Earthquake, Execute, Fear, Meteor, Skyward Strike та Soul Split."]],
-      [["Pierce imprint","Відбиток Pierce"],["The table shows which basic attacks gain extra hits from Pierce. Magnus already hits up to three enemies with a swing. Grenadier and Demolitionist can hit nearby enemies with their own explosion.","У таблиці видно, чи додає Pierce влучання до базової атаки. Magnus і без відбитка може зачепити замахом трьох ворогів. Grenadier та Demolitionist можуть уражати сусідніх ворогів власним вибухом."]]
+      [["Shared hit effects","Спільні ефекти влучань"],["Basic hits and separate skill hits can trigger Bash, Blind, Chain, Chill, Poison, Timeless and Transfer. A kill can activate Overdrive. Lifesteal V restores 4 HP per 100 damage dealt (12 HP on a standard single-target basic hit). These hits cannot trigger Earthquake, Execute, Fear, Meteor, Skyward Strike or Soul Split.","Базові влучання й окремі удари вмінь можуть запустити Bash, Blind, Chain, Chill, Poison, Timeless і Transfer. Убивство може активувати Overdrive. Lifesteal V відновлює 4 HP за 100 шкоди (для звичайного одиночного базового удару — 12 HP). Earthquake, Execute, Fear, Meteor, Skyward Strike та Soul Split від цих влучань не спрацьовують."]],
+      [["Basic attack or skill hit?","Базова атака чи удар уміння?"],["Basic attacks can also trigger the Knockback and Shrink imprints. The eight separate skills in the table cannot. Their own effects still apply: for example, Call of the Plains can push an enemy even without the Knockback imprint.","Базові атаки додатково можуть запустити відбитки Knockback і Shrink. Окремі удари восьми вмінь із таблиці цих відбитків не запускають. Власні ефекти вмінь діють: наприклад, Call of the Plains може відштовхнути ворога й без відбитка Knockback."]],
+      [["Extended spear: first target or next target?","Подовжений спис: перша чи наступна ціль?"],["The first target of an extended thrust follows the basic-attack rules above, including Knockback and Shrink. Further targets hit by the same spear take damage without triggering the wielder’s on-hit imprints or healing the wielder through Lifesteal. This applies to the skill’s built-in reach; the Pierce imprint adds its own projectile.","Для першої цілі подовженого випаду діють усі наведені вище правила базової атаки, включно з Knockback і Shrink. Наступні цілі, яких зачепив сам спис, отримують шкоду, але не запускають відбитки від влучання й не лікують списника через Lifesteal. Це стосується досяжності самого вміння. Відбиток Pierce додає окремий снаряд."]],
+      [["Reading the Pierce column","Як читати колонку Pierce"],["The column shows extra hits granted by the imprint. A grenade can still catch nearby enemies in its blast, and Magnus can hit up to three enemies with a swing.","Колонка показує додаткові влучання саме від відбитка. Вибух гранати все одно може зачепити сусідніх ворогів, а Magnus одним замахом може вразити до трьох цілей."]]
     ],
     unitIds:["W:legendary:3:마그누스","A:rare:2:척탄병","A:rare:3:폭파대장","S:prism:2:창술사","S:prism:3:랜스마스터","H:rare:2:초원 기병","H:rare:3:켄타로우스","D:advanced:2:빅터","D:prism:2:타락천사","D:prism:3:파멸의 천사"],
-    links:["im-earthquake","im-execute","im-fear","im-meteor","im-skyward_strike","im-soul_split","im-pierce","im-lifesteal","secondary-hit-imprints","pierce-imprint","sk-ruin_tremor"],
+    links:["im-earthquake","im-execute","im-fear","im-meteor","im-skyward_strike","im-soul_split","im-pierce","im-lifesteal","secondary-hit-imprints","pierce-imprint","sk-ruin_tremor","sk-timed_keg","sk-concussion_bomb","sk-call_of_the_plains","sk-wild_stampede","sk-rupturing_descent","sk-doom_resonance","sk-volt_saw","sk-lance_extension","sk-peerless_spear"],
     tags:"AoE splash землетрус пробиття вампіризм"
   },
   {
@@ -3771,8 +3775,16 @@ globalThis.SlotGuide=(()=>{
       const wrap=element("div","table-scroll"),table=element("table","guide-table");
       const head=table.createTHead().insertRow();
       for(const h of e.grid.headers) {const th=element("th","",t(h));th.scope="col";head.append(th);}
-      const body=table.createTBody();
-      for(const cells of e.grid.rows) {
+      let body;
+      for(const [index,cells] of e.grid.rows.entries()) {
+        const group=e.grid.groupStarts?.[index];
+        if(!body || group) body=table.createTBody();
+        if(group) {
+          const heading=element("th","guide-rowgroup",t(group));
+          heading.scope="rowgroup";
+          heading.colSpan=e.grid.headers.length;
+          body.insertRow().append(heading);
+        }
         const row=body.insertRow();
         cells.forEach((value,i)=>SlotArt.write(row.insertCell(),t(value),e,e.grid.headers[i][0],inlineLink));
       }
@@ -3909,6 +3921,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#guide?id=area-basic-imprints","Grouped all ten area attackers by skill and added the first-target rule for extended spears.","У таблиці згруповано всіх десятьох юнітів за типом уміння й додано правило першої цілі для подовженого списа."],
     ["2026-11-25","changed","#guide?id=soul-state","Clarified when a Transfer hit from Ruin can start a Chain bounce.","Уточнено, коли влучання Transfer від аури Ruin може запустити відскок Chain."],
     ["2026-11-25","changed","#guide?id=area-basic-imprints","Grouped shared imprint effects and the differences between basic attacks and Magnus’s Ruin Tremor.","Спільні ефекти базових атак і Ruin Tremor у Magnus згруповано окремо від відмінностей."],
     ["2026-11-25","changed","#guide?id=soul-state","Which imprints still work on spirit attacks, Ruin ticks and the final death of an Undying Soul.","Які відбитки працюють від атак духа, тиків Ruin і під час остаточної загибелі Undying Soul."],
