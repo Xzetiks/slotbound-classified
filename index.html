@@ -3213,6 +3213,9 @@ globalThis.SlotHandbook=(()=>{
   const byUnit=new Map(SlotEntities.filter(e=>e.unitId).map(e=>[e.id,e]));
   // One searchable report per behavior, even when several articles describe it.
   const bugs=[
+    {id:"overlord-shadows",also:["im-overlord"],title:["Overlord’s Eye Bat disappears when attacking","Тінь Eye Bat зникає під час атаки"],summary:[
+      "When an Eye Bat recruited by Overlord tries to attack, its sprite disappears. The bat can stay alive at full HP while stuck in the attack animation. Its sprite sheet has no attack animation registered.",
+      "Коли завербований через Overlord кажан Eye Bat намагається атакувати, він зникає з екрана. Кажан може залишатися живим із повним запасом HP, застрягнувши в стані атаки. Гра не має зареєстрованої анімації атаки для його спрайта."]},
     {id:"buildup-speed",also:["im-brace"],possible:true,summary:[
       "Buildup’s tooltip omits the attack delay. At 1,200 ASPD and a 0.12 s animation offset, Eclipse lands about 60 basic hits per second without Buildup and 7.1 with Buildup V (88% fewer). At 40 ASPD with the same offset, the rate falls from 2 to 1.6 hits per second (20% fewer).",
       "В описі Buildup пропущено затримку атаки. За 1 200 ASPD і зсуву анімації 0,12 с Eclipse завдає близько 60 базових влучань за секунду без Buildup і 7,1 із Buildup V (на 88% менше). За 40 ASPD із тим самим зсувом частота падає з 2 до 1,6 влучання за секунду (на 20% менше)."]},
