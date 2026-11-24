@@ -1040,6 +1040,10 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
 .guide-featured {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,275px),1fr));gap:12px;margin-bottom:16px}
 .guide-shortcut {color:var(--ink);text-decoration:none;border-inline-start:3px solid var(--mint);flex-wrap:nowrap}
 .guide-shortcut:hover,.guide-shortcut:focus-visible {border-color:var(--mint)}
+.guide-bugs-link,.guide-bugs-link:hover,.guide-bugs-link:focus-visible {border-color:var(--gold)}
+.bug-badge {display:inline-block;padding:.05em .45em;border:1px solid #ad9159;border-radius:3px;color:var(--gold);font-size:.75rem;font-weight:700;line-height:1.3;vertical-align:middle}
+.guide-bug-note {border-inline-start:3px solid var(--gold);padding:.6rem .8rem;background:#28251e;color:var(--ink)}
+.guide-bug-note .bug-badge {margin-inline-end:.3em}
 .guide-entity-title {overflow-wrap:anywhere}
 .guide-result-title {line-height:1.3}
 .guide-tile h2 {display:flex;align-items:center}
@@ -1153,6 +1157,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
           <aside id="hit-window" class="unit-note" aria-labelledby="over-threshold" hidden>
             <strong id="over-threshold"></strong> <span id="over-level"></span>
             <p id="hit-cause"></p><p id="hit-band"></p><p id="hit-loss" hidden></p><p id="hit-now"></p>
+            <a class="guide-link" href="#guide?id=moon-bolt-overcap" data-i18n="moonBoltBug">Bug · Moon Bolt</a>
           </aside>
           <section class="panel chart-panel"><div class="panel-heading"><div><h2 data-i18n="rate">Effective basic attack rate</h2><small data-i18n="rateUnits">Basic hits on one target per battle second</small></div><div class="chart-key"><i></i><span data-i18n="selectedOffset">Selected offset</span></div></div>
             <div class="chart-wrap"><canvas id="chart" role="img" aria-label="Basic attack rate by build ASPD" data-i18n-aria="chart"></canvas></div>
@@ -2561,6 +2566,7 @@ globalThis.SlotLevelPlan = (() => {
     guideSection: "Розділ",
     guideType: "Тип",
     unitGuide: "Приховані механіки",
+    moonBoltBug: "Баг · Moon Bolt",
     brand: "Slotbound · Таємно · Калькулятор",
     navigation: "Основна навігація",
     calculator: "Калькулятор",
@@ -3382,6 +3388,28 @@ globalThis.SlotHandbook=(()=>{
   ];
   const byId=new Map(entries.map(e=>[e.id,e]));
   const byUnit=new Map(SlotEntities.filter(e=>e.unitId).map(e=>[e.id,e]));
+  // One searchable report per behavior, even when several articles describe it.
+  const bugs=[
+    {id:"volley-speed",also:["im-volley"],summary:[
+      "Fast ranged attacks can interrupt every bonus arrow earned from Volley.",
+      "Швидкі дальні атаки можуть переривати кожну додаткову стрілу Volley до її випуску."]},
+    {id:"poison-relay",also:["it-08"],summary:[
+      "Cursed Mushroom can pass on more Poison damage than remained on the dying enemy. The transfer skips the late Endless damage penalty.",
+      "Cursed Mushroom може передати більше шкоди від отрути, ніж залишалося на ворогові перед смертю. На передану отруту не діє штраф пізніх хвиль Endless."]},
+    {id:"it-49",summary:[
+      "Rockfall delays the selected enemies by 2 seconds at every item level. The tooltip says 1.5 seconds.",
+      "На всіх рівнях Rockfall затримує вибраних ворогів на 2 секунди. В описі предмета вказано 1,5 секунди."]},
+    {id:"fa-celestial",summary:[
+      "Miracle can still revive eligible allies after the last ally falls. Its description says one ally must be left standing.",
+      "Miracle може підняти придатних до відродження союзників навіть після загибелі останнього бійця. В описі фракції сказано, що на ногах має залишитися один союзник."]},
+    {id:"moon-bolt-overcap",also:["unit-120"],summary:[
+      "Above her Overcap, Crescent Queen can restart attacks so quickly that she fires no Moon Bolts even with a target in range.",
+      "За надмірної ASPD Crescent Queen може перезапускати атаки так швидко, що жоден Moon Bolt не вилетить, навіть коли ціль у радіусі атаки."]},
+    {id:"enemy-broods",title:["Grimwolf Orc’s wolf packs","Вовчі зграї Grimwolf Orc"],summary:[
+      "Grimwolf Orc summons two wolves about every 5 seconds. The enemy collection lists a 3-second interval.",
+      "Grimwolf Orc викликає двох вовків приблизно кожні 5 секунд. У колекції ворогів вказано інтервал у 3 секунди."]}
+  ];
+  const bugByArticle=new Map(bugs.flatMap(bug=>[bug.id,...(bug.also||[])].map(id=>[id,bug])));
   const formToEntry=new Map([...byUnit.values()].map(e=>[e.unitId,e]));
   const destinations=new Map([...byId,...byUnit]);
   const relations=new Map();
@@ -3415,7 +3443,7 @@ globalThis.SlotHandbook=(()=>{
   function related(id) {
     return [...(relations.get(id)||[])].map(key=>destinations.get(key));
   }
-  return {sections,entries,byUnit,formToEntry,entryFor,related};
+  return {sections,entries,byUnit,formToEntry,entryFor,related,bugByArticle};
 })();
 
 </script>
@@ -3772,7 +3800,7 @@ globalThis.SlotArt = (() => {
 <script>
 /* The same fragment URLs work from disk, including history and direct article links. */
 globalThis.SlotGuide=(()=>{
-  const {sections,entries,byUnit,entryFor,related}=SlotHandbook;
+  const {sections,entries,byUnit,entryFor,related,bugByArticle}=SlotHandbook;
   const rosterById=new Map(SlotRoster.map(u=>[u.id,u]));
   const unitArticles=new Map([...byUnit.values()].map(e=>[e.unitId,e.id]));
   const pageSize=24;
@@ -3810,12 +3838,14 @@ globalThis.SlotGuide=(()=>{
   function entryLink(e,p) {
     const a=link(titleOf(e),url(p,{id:e.id}),"guide-link");
     SlotArt.entryImages(a,e,"link");
+    if(bugByArticle.has(e.id)) a.append(" ",bugBadge());
     return a;
   }
+  function bugBadge(){return element("span","bug-badge",tr("Bug","Баг"));}
   function txt(value) {return String(value??"").toLocaleLowerCase().replace(/[’‘']/g,"").replace(/[-_]/g," ");}
   const index=new Map(entries.map(e=>{
     const owners=(e.unitIds||[]).map(id=>SlotHandbook.formToEntry.get(id)?.title);
-    return [e.id,txt([e.title,e.kind,e.tags,e.body,e.facts,e.grid?.headers,e.grid?.rows,owners].flat(Infinity).join(" "))];
+    return [e.id,txt([e.title,e.kind,e.tags,e.body,e.facts,e.grid?.headers,e.grid?.rows,owners,bugByArticle.get(e.id)?.summary].flat(Infinity).join(" "))];
   }));
   const kindId=e=>e.kind?.[0]||"";
   function openFilters(changes,replace=false) {
@@ -3833,6 +3863,12 @@ globalThis.SlotGuide=(()=>{
     const heading=element("h2","guide-entity-title",titleOf(e));
     SlotArt.entryImages(heading,e,"hero");
     box.append(trail,heading);
+    const bug=bugByArticle.get(e.id);
+    if(bug){
+      const note=prose("p","guide-bug-note",t(bug.summary),e,"",inlineLink);
+      note.prepend(bugBadge()," ");
+      box.append(note);
+    }
     if(t(e.body)) box.append(prose("p","guide-lead",t(e.body),e,"",inlineLink));
     if(e.facts?.length) {
       const dl=element("dl","guide-facts");
@@ -3878,6 +3914,9 @@ globalThis.SlotGuide=(()=>{
       SlotArt.entryImages(a,e,"card");
       shortcuts.append(a);
     }
+    const bugLink=link("","#guide?q="+encodeURIComponent(tr("bug","баг")),"panel guide-shortcut guide-bugs-link");
+    bugLink.append(element("strong","",tr("Known bugs","Відомі баги")));
+    shortcuts.append(bugLink);
     container.append(shortcuts);
     const grid=element("div","guide-sections");
     const icons={hits:"im-chain",imprints:"im-pierce",traits:"tr-31",awakenings:"aw-S06",summons:"actor-undead-brute",units:"unit-43",items:"it-23",cores:"co-01",progression:"stone-specialstone"};
@@ -3890,10 +3929,12 @@ globalThis.SlotGuide=(()=>{
     container.append(grid);
   }
   function results(container,p,pool,query) {
-    const words=txt(query).trim().split(/\s+/).filter(Boolean);
-    const matches=pool.filter(e=>words.every(word=>index.get(e.id).includes(word)));
+    const tokens=txt(query).trim().split(/\s+/).filter(Boolean);
+    const bugWord=word=>["bug","bugs","баг","баги"].includes(word);
+    const bugsOnly=tokens.some(bugWord), words=tokens.filter(word=>!bugWord(word));
+    const matches=pool.filter(e=>(!bugsOnly||bugByArticle.get(e.id)?.id===e.id) && words.every(word=>index.get(e.id).includes(word)));
     const section=p.get("s");
-    if(words.join("").length>=3 && (!section||section==="units") && !p.get("k")){
+    if(!bugsOnly && words.join("").length>=3 && (!section||section==="units") && !p.get("k")){
       for(const unit of byUnit.values()){
         if(related(unit.id).length && !matches.some(e=>e.id===unit.id) && words.every(w=>txt(unit.title.join(" ")).includes(w)))matches.push(unit);
       }
@@ -3914,10 +3955,14 @@ globalThis.SlotGuide=(()=>{
     for(const e of matches.slice((page-1)*pageSize,page*pageSize)) {
       const a=link("",url(p,{id:e.id}),"panel guide-result");
       const meta=e.unitId?tr("Unit mechanics","Механіки юніта"):t(sections[e.section][0]);
-      const heading=element("strong","guide-result-title",titleOf(e));
+      const bug=bugByArticle.get(e.id);
+      const heading=element("strong","guide-result-title",bugsOnly&&bug.title?t(bug.title):titleOf(e));
       SlotArt.entryImages(heading,e,"card");
-      a.append(element("small","",meta),heading);
-      if(t(e.body)) a.append(prose("span","guide-snippet",t(e.body),e));
+      const category=element("small","",meta);
+      if(bug) category.append(" ",bugBadge());
+      a.append(category,heading);
+      const snippet=t(bugsOnly?bug.summary:e.body);
+      if(snippet) a.append(prose("span","guide-snippet",snippet,e));
       grid.append(a);
     }
     container.append(grid);
