@@ -1021,6 +1021,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
 .guide-shortcut:hover,.guide-shortcut:focus-visible {border-color:var(--mint)}
 .guide-bugs-link,.guide-bugs-link:hover,.guide-bugs-link:focus-visible {border-color:var(--gold)}
 .bug-badge {display:inline-block;padding:.05em .45em;border:1px solid #ad9159;border-radius:3px;color:var(--gold);font-size:.75rem;font-weight:700;line-height:1.3;vertical-align:middle}
+.bug-badge.possible {border-style:dashed}
 .guide-bug-note {border-inline-start:3px solid var(--gold);padding:.6rem .8rem;background:#28251e;color:var(--ink)}
 .guide-bug-note .bug-badge {margin-inline-end:.3em}
 .guide-entity-title {overflow-wrap:anywhere}
@@ -3084,8 +3085,8 @@ globalThis.SlotGuideRules=(()=>{
     tests,[f("Measured on Seraph","Вимір для Seraph","38 battle seconds, 60 updates/s, zero offset, Volley V. Counts below are ordinary releases / extra releases.","38 бойових секунд, 60 оновлень/с, нульовий зсув, Volley V. У таблиці вказано звичайні / додаткові постріли.")],["buildup-speed","im-volley","speed-ticks"]);
   volley.grid={headers:[pair("ASPD"),pair("Volley V"),pair("+ Buildup V")],rows:[["9","16 / 5","16 / 5"],["10","19 / 0","17 / 5"],["84","150 / 0","103 / 33"],["18 000","150 / 0","146 / 0"]].map(row=>row.map(v=>pair(v)))};
   add("buildup-speed","hits","Buildup changes the spacing between attacks","Як Buildup змінює інтервал атак",
-    "An ordinary attack primes the next boosted hit. On a ranged unit the priming happens at release. Buildup adds 15 ticks before the boosted attack, which can give a pending Volley time to finish.",
-    "Звичайна атака готує наступний посилений удар. У дальнього юніта підготовка відбувається під час випуску снаряда. Buildup додає 15 тиків перед посиленою атакою й може дати час на додатковий постріл Volley.",
+    "An ordinary basic attack primes the next one for bonus damage. At every Buildup rank, this adds 0.25 seconds (15 ticks) to the cooldown before the boosted attack. Ranged units prime it when they release the shot. The delay can give Volley time to fire a bonus arrow.",
+    "Звичайна базова атака готує наступну посилену атаку. На кожному рівні Buildup це додає 0,25 секунди (15 тиків) до перезарядки перед посиленою атакою. У стрільців підготовка відбувається під час випуску снаряда. За час затримки Volley може встигнути випустити додаткову стрілу.",
     tests+" · battlefield brace release/recharge branch",[],["volley-speed","im-brace"]);
   add("poison-relay","hits","Cursed Mushroom in late Endless waves","Cursed Mushroom на пізніх хвилях Endless",
     "On death, the item rebuilds poison damage from the dying enemy’s maximum HP and passes the remaining ticks to the nearest valid enemy within 70. This path skips the normal late-wave Poison penalty.",
@@ -3212,6 +3213,9 @@ globalThis.SlotHandbook=(()=>{
   const byUnit=new Map(SlotEntities.filter(e=>e.unitId).map(e=>[e.id,e]));
   // One searchable report per behavior, even when several articles describe it.
   const bugs=[
+    {id:"buildup-speed",also:["im-brace"],possible:true,summary:[
+      "Buildup’s tooltip omits the attack delay. At 1,200 ASPD and a 0.12 s animation offset, Eclipse lands about 60 basic hits per second without Buildup and 7.1 with Buildup V (88% fewer). At 40 ASPD with the same offset, the rate falls from 2 to 1.6 hits per second (20% fewer).",
+      "В описі Buildup пропущено затримку атаки. За 1 200 ASPD і зсуву анімації 0,12 с Eclipse завдає близько 60 базових влучань за секунду без Buildup і 7,1 із Buildup V (на 88% менше). За 40 ASPD із тим самим зсувом частота падає з 2 до 1,6 влучання за секунду (на 20% менше)."]},
     {id:"volley-speed",also:["im-volley"],summary:[
       "Fast ranged attacks can interrupt every bonus arrow earned from Volley.",
       "Швидкі дальні атаки можуть переривати кожну додаткову стрілу Volley до її випуску."]},
@@ -3654,10 +3658,14 @@ globalThis.SlotGuide=(()=>{
   function entryLink(e,p) {
     const a=link(titleOf(e),url(p,{id:e.id}),"guide-link");
     SlotArt.entryImages(a,e,"link");
-    if(bugByArticle.has(e.id)) a.append(" ",bugBadge());
+    const bug=bugByArticle.get(e.id);
+    if(bug) a.append(" ",bugBadge(bug));
     return a;
   }
-  function bugBadge(){return element("span","bug-badge",tr("Bug","Баг"));}
+  function bugBadge(bug){
+    return bug.possible ? element("span","bug-badge possible",tr("Possible bug","Можливий баг"))
+      : element("span","bug-badge",tr("Bug","Баг"));
+  }
   function txt(value) {return String(value??"").toLocaleLowerCase().replace(/[’‘']/g,"").replace(/[-_]/g," ");}
   const index=new Map(entries.map(e=>{
     const owners=(e.unitIds||[]).map(id=>SlotHandbook.formToEntry.get(id)?.title);
@@ -3682,7 +3690,7 @@ globalThis.SlotGuide=(()=>{
     const bug=bugByArticle.get(e.id);
     if(bug){
       const note=prose("p","guide-bug-note",t(bug.summary),e,"",inlineLink);
-      note.prepend(bugBadge()," ");
+      note.prepend(bugBadge(bug)," ");
       box.append(note);
     }
     if(t(e.body)) box.append(prose("p","guide-lead",t(e.body),e,"",inlineLink));
@@ -3731,7 +3739,7 @@ globalThis.SlotGuide=(()=>{
       shortcuts.append(a);
     }
     const bugLink=link("","#guide?q="+encodeURIComponent(tr("bug","баг")),"panel guide-shortcut guide-bugs-link");
-    bugLink.append(element("strong","",tr("Known bugs","Відомі баги")));
+    bugLink.append(element("strong","",tr("Known and possible bugs","Відомі й можливі баги")));
     shortcuts.append(bugLink);
     container.append(shortcuts);
     const grid=element("div","guide-sections");
@@ -3747,8 +3755,15 @@ globalThis.SlotGuide=(()=>{
   function results(container,p,pool,query) {
     const tokens=txt(query).trim().split(/\s+/).filter(Boolean);
     const bugWord=word=>["bug","bugs","баг","баги"].includes(word);
-    const bugsOnly=tokens.some(bugWord), words=tokens.filter(word=>!bugWord(word));
-    const matches=pool.filter(e=>(!bugsOnly||bugByArticle.get(e.id)?.id===e.id) && words.every(word=>index.get(e.id).includes(word)));
+    const bugsOnly=tokens.some(bugWord);
+    const possibleWord=word=>["possible","можливий","можливі"].includes(word);
+    const possibleOnly=bugsOnly && tokens.some(possibleWord);
+    const words=tokens.filter(word=>!bugWord(word) && !(possibleOnly && possibleWord(word)));
+    const matches=pool.filter(e=>{
+      const bug=bugByArticle.get(e.id);
+      if(bugsOnly && (bug?.id!==e.id || (possibleOnly && !bug.possible)))return false;
+      return words.every(word=>index.get(e.id).includes(word));
+    });
     const section=p.get("s");
     if(!bugsOnly && words.join("").length>=3 && (!section||section==="units") && !p.get("k")){
       for(const unit of byUnit.values()){
@@ -3775,7 +3790,7 @@ globalThis.SlotGuide=(()=>{
       const heading=element("strong","guide-result-title",bugsOnly&&bug.title?t(bug.title):titleOf(e));
       SlotArt.entryImages(heading,e,"card");
       const category=element("small","",meta);
-      if(bug) category.append(" ",bugBadge());
+      if(bug) category.append(" ",bugBadge(bug));
       a.append(category,heading);
       const snippet=t(bugsOnly?bug.summary:e.body);
       if(snippet) a.append(prose("span","guide-snippet",snippet,e));
