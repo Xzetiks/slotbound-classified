@@ -1022,6 +1022,17 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
 .guide-bugs-link,.guide-bugs-link:hover,.guide-bugs-link:focus-visible {border-color:var(--gold)}
 .bug-badge {display:inline-block;padding:.05em .45em;border:1px solid #ad9159;border-radius:3px;color:var(--gold);font-size:.75rem;font-weight:700;line-height:1.3;vertical-align:middle}
 .bug-badge.possible {border-style:dashed}
+.latest-update {display:flex;gap:.75rem;align-items:baseline;margin-top:1rem;font-size:.88rem;color:inherit;text-decoration:none}
+.latest-update strong,.update-kind {color:var(--gold)}
+.latest-update:hover span,.latest-update:focus-visible span {text-decoration:underline}
+.latest-update strong {flex:none}
+.update-history {padding:clamp(1rem,3vw,2rem);max-width:58rem}
+.update-history h2 {font-size:1.15rem;margin:0 0 .65rem}
+.update-history ul {list-style:none;padding:0;margin:0 0 1.7rem}
+.update-history ul:last-child {margin-bottom:0}
+.update-history li {display:grid;grid-template-columns:5rem 1fr;gap:.6rem;border-top:1px solid var(--line);padding:.7rem 0}
+.update-history a {color:inherit;text-underline-offset:.2em}
+@media(max-width:560px){.latest-update {display:block}.latest-update strong {margin-inline-end:.5rem}}
 .guide-bug-note {border-inline-start:3px solid var(--gold);padding:.6rem .8rem;background:#28251e;color:var(--ink)}
 .guide-bug-note .bug-badge {margin-inline-end:.3em}
 .guide-entity-title {overflow-wrap:anywhere}
@@ -1097,16 +1108,22 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
   
   
   
+  
 </head>
 <body>
   <header class="bar"><div class="wrap bar-inner">
     <a href="#calc" class="brand" aria-label="Slotbound Classified · Calculator" data-i18n-aria="brand" title="The Joker told us." data-i18n-title="secretTip"><img src="data:image/png;base64,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" class="brand-icon" alt=""><span class="brand-name">SLOTBOUND<span class="brand-stamp" data-i18n="classified">CLASSIFIED</span></span></a>
-    <nav aria-label="Main navigation" data-i18n-aria="navigation"><a href="#calc" id="nav-calc" data-i18n="calculator">Calculator</a><a href="#roster" id="nav-roster" data-i18n="allUnits">All units</a><a href="#guide" id="nav-guide" data-i18n="mechanics">Mechanics</a></nav>
+    <nav aria-label="Main navigation" data-i18n-aria="navigation"><a href="#calc" id="nav-calc" data-i18n="calculator">Calculator</a><a href="#roster" id="nav-roster" data-i18n="allUnits">All units</a><a href="#guide" id="nav-guide" data-i18n="mechanics">Mechanics</a><a href="#updates" id="nav-updates" data-i18n="updates">Updates</a></nav>
     <span class="version"><span data-i18n="game">Game</span> <b>1.0.4</b></span>
     <div class="language-picker"><label for="language" data-i18n="language">Language</label><select id="language"><option value="en" lang="en">English</option><option value="uk" lang="uk">Українська</option></select></div>
   </div></header>
   <main class="wrap">
+    <section id="updates-view" hidden>
+      <div class="intro"><h1 data-i18n="siteUpdates">Site updates</h1></div>
+      <div class="panel update-history" id="update-history"></div>
+    </section>
     <section id="calc-view">
+      <a class="latest-update" href="#updates"><strong data-i18n="latestUpdate">Latest update</strong> <span id="latest-update-text"></span></a>
       <div class="intro"><h1 data-i18n="heading">Attack speed calculator</h1><p data-i18n="intro">See which Absorb levels increase your Tier 3 unit’s hits per second.</p></div>
       <div class="layout">
         <aside class="controls">
@@ -2413,6 +2430,7 @@ globalThis.SlotLevelPlan = (() => {
   "use strict";
 
   const uk = {
+    updates:"Оновлення",siteUpdates:"Оновлення сайту",latestUpdate:"Останнє оновлення",
     title: "Slotbound · Таємно",
     classified: "ТАЄМНО",
     secretTip: "Джокер проговорився.",
@@ -2627,7 +2645,7 @@ globalThis.SlotHiddenCooldowns = [{
 globalThis.SlotGuideHits = [
   {
     id:"area-basic-imprints", section:"hits",
-    title:["Which units cannot trigger Earthquake with basic attacks?","У яких юнітів базові атаки не запускають Earthquake?"],
+    title:["Which imprints work on area and explosive basic attacks?","Які відбитки працюють із базовими атаками по площі та вибухами?"],
     body:["The ten units below cannot trigger Earthquake, Execute, Fear, Meteor, Skyward Strike or Soul Split with their basic attacks. The game treats each hit as area damage or an explosion, even against a single enemy.",
       "У десяти юнітів із таблиці базові атаки не запускають Earthquake, Execute, Fear, Meteor, Skyward Strike та Soul Split. Гра зараховує кожне таке влучання як шкоду по площі або вибух, навіть коли ворог лише один."],
     grid:{
@@ -2869,6 +2887,10 @@ globalThis.SlotGuideCombat = [
     ["The boar and bear inherit their mage’s maximum HP and current ATK when summoned. Their attack intervals and the amount healed on a repeat cast are fixed.",
      "У момент виклику кабан і ведмідь успадковують частки максимальних HP та поточної ATK свого мага. Інтервал атак і кількість HP, яку зцілює повторне застосування, у кожного звіра фіксовані."],
     [
+      f("On hit","При влучанні","Bash, Blind, Chain, Chill, Execute, Fear, Knockback, Poison, Shrink, Skyward Strike, Timeless and Transfer can trigger from either animal’s attack.","Від атак обох звірів можуть спрацювати Bash, Blind, Chain, Chill, Execute, Fear, Knockback, Poison, Shrink, Skyward Strike, Timeless та Transfer."),
+      f("Imprints that skip pet hits","Відбитки, які пропускають влучання звіра","Earthquake, Meteor and Soul Split on the mage do not trigger when the animal hits. The mage’s Pierce imprint does not produce a piercing projectile from the animal’s melee attack.","Earthquake, Meteor та Soul Split на магові не спрацьовують від влучань звіра. Відбиток Pierce мага також не створює пробивного снаряда від удару звіра в ближньому бою."),
+      f("Who gets the healing?","Хто отримує лікування?","With Lifesteal V on the mage, a pet hit dealing 100 damage restores 12 HP to the mage. The animal receives no healing from that hit.","З Lifesteal V на магові удар звіра на 100 шкоди відновлює 12 HP магові. Сам звір від цього влучання не зцілюється."),
+      f("On kill","При вбивстві","A kill by the animal can activate Overdrive on its mage.","Убивство, здійснене звіром, може активувати Overdrive у його мага."),
       f("Wild Mage’s boar","Кабан Дикого мага","75% of the mage’s max HP and 80% of current ATK. Its basic interval is 0.9 s, range 55 and movement speed 65. A repeat cast restores 35 HP.","75% максимальних HP мага й 80% поточної ATK. Базовий інтервал атаки 0,9 с, дальність 55, швидкість руху 65. Повторне застосування відновлює 35 HP."),
       f("Primitive Mage’s bear","Ведмідь Первісного мага","110% of the mage’s max HP and 90% of current ATK. Its basic interval is 1.1 s, range 60 and movement speed 45. A repeat cast restores 50 HP. The arrival taunt reaches 150 units.","110% максимальних HP мага й 90% поточної ATK. Базовий інтервал атаки 1,1 с, дальність 60, швидкість руху 45. Повторне застосування відновлює 50 HP. Провокація при появі діє в радіусі 150 одиниць.")
     ], "skill.savage_tusk / mountain_roar · battlefield._updateBig casting branch · check_guide_summons.py", "wild mage primitive mage savage tusk mountain roar animal taunt кабан ведмідь звір маг рев");
@@ -3273,6 +3295,7 @@ globalThis.SlotHandbook=(()=>{
   }
   for(const [a,ids] of Object.entries({
     "area-basic-imprints":byId.get("area-basic-imprints").links,
+    "boar-bear":["area-basic-imprints","im-earthquake","im-meteor","im-soul_split","im-pierce","im-lifesteal","im-overdrive",formToEntry.get("M:advanced:2:야생법사").id,formToEntry.get("M:advanced:3:원시법사").id],
     "internal-cooldowns":["earthquake-clones","skyward-strike","meteor-impact","im-bash","im-timeless"],
     "secondary-hit-imprints":["im-ruin","im-transfer","im-chain","im-pierce","pierce-awakening","internal-cooldowns"],
     "engineer-manuals":["tr-26","fa-engineer","it-32","it-34"]
@@ -3557,6 +3580,7 @@ globalThis.SlotArt = (() => {
   };
   // Profile artwork depicts the specific entities discussed in that article.
   const profiles = {
+    "area-basic-imprints":["im-earthquake","im-pierce","im-lifesteal"],
     "pierce-awakening":["aw-S06"],"pierce-imprint":["im-pierce"],"pierce-stacking":["im-pierce","aw-S06"],
     "secondary-hit-imprints":["im-pierce","im-chain"],"chain-transfer-poison":["im-chain","im-transfer","im-poison"],
     "lich-undead":["actor-undead-brute","actor-undead","actor-rotter"],
@@ -3865,6 +3889,44 @@ globalThis.SlotGuide=(()=>{
   el("guide-query").addEventListener("input",e=>openFilters({q:e.target.value},true));
   el("guide-search").addEventListener("submit",e=>{e.preventDefault();openFilters({q:el("guide-query").value},true);});
   return {render,unitArticle:id=>unitArticles.get(id)};
+})();
+
+</script>
+<script>
+/* Keep previous releases in this list. New changes go first, even on the same date. */
+globalThis.SlotUpdates=(()=>{
+  const changes=[
+    ["2026-11-25","changed","#guide?id=boar-bear","Which mage imprints trigger when the boar or bear hits, and who gets the healing.","Які відбитки мага запускають удари кабана й ведмедя та хто отримує лікування."],
+    ["2026-11-25","changed","#guide?id=area-basic-imprints","Renamed the area-attack guide to cover all affected imprints.","Стаття про базові атаки по площі отримала назву, що охоплює всі відповідні відбитки."],
+    ["2026-11-25","added","#guide?id=area-basic-imprints","Ten units whose basic attacks skip six imprints, with separate Pierce and Lifesteal rules.","Десять юнітів, чиї базові атаки пропускають шість відбитків, і окремі правила для Pierce та Lifesteal."],
+    ["2026-11-24","added","#guide?id=overlord-shadows","An Eye Bat recruited by Overlord can disappear when it tries to attack.","Завербований через Overlord кажан Eye Bat може зникнути під час атаки."],
+    ["2026-11-24","changed","#guide?id=buildup-speed","Buildup’s hidden attack delay now has a possible-bug label and two examples for Eclipse.","До прихованої затримки Buildup додано позначку «Можливий баг» і два приклади для Eclipse."],
+    ["2026-11-24","removed",null,"Removed the Miracle revival entry.","Вилучено статтю про воскресіння від Miracle."],
+    ["2026-11-24","changed","#roster","Updated attack caps and hidden mechanics for Slotbound 1.0.4.","Оновлено капи швидкості атаки й приховані механіки для Slotbound 1.0.4."]
+  ];
+  const labels={added:["Added","Додано"],changed:["Changed","Змінено"],removed:["Removed","Вилучено"]};
+  function render(lang){
+    const uk=lang==="uk", list=document.getElementById("update-history");
+    document.getElementById("latest-update-text").textContent=changes[0][uk?4:3];
+    list.replaceChildren();
+    const dateFormat=new Intl.DateTimeFormat(uk?"uk-UA":"en-GB",{dateStyle:"long",timeZone:"UTC"});
+    let day,items;
+    for(const [date,kind,href,en,ua] of changes){
+      if(day!==date){
+        day=date;
+        const heading=document.createElement("h2"), time=document.createElement("time");
+        time.dateTime=date;time.textContent=dateFormat.format(new Date(date+"T00:00:00Z"));
+        heading.append(time);items=document.createElement("ul");list.append(heading,items);
+      }
+      const li=document.createElement("li"), label=document.createElement("strong");
+      label.textContent=labels[kind][uk?1:0];label.className="update-kind";
+      const item=document.createElement(href?"a":"span");
+      if(href)item.href=href;
+      item.textContent=uk?ua:en;
+      li.append(label,item);items.append(li);
+    }
+  }
+  return {render};
 })();
 
 </script>
@@ -4281,12 +4343,16 @@ globalThis.SlotGuide=(()=>{
   function route() {
     const guide=location.hash.split("?")[0]==="#guide";
     const roster = location.hash === "#roster";
+    const updates=location.hash==="#updates";
+    el("updates-view").hidden=!updates;
     el("guide-view").hidden = !guide;
     el("roster-view").hidden = !roster;
-    el("calc-view").hidden = roster || guide;
+    el("calc-view").hidden = roster || guide || updates;
     el("nav-roster").setAttribute("aria-current",roster ? "page" : "false");
     el("nav-guide").setAttribute("aria-current",guide ? "page" : "false");
-    el("nav-calc").setAttribute("aria-current",roster || guide ? "false" : "page");
+    el("nav-calc").setAttribute("aria-current",roster || guide || updates ? "false" : "page");
+    el("nav-updates").setAttribute("aria-current",updates ? "page" : "false");
+    if(updates)return;
     if (guide) SlotGuide.render(lang);
     else if (roster) paintRoster();
     else {
@@ -4384,6 +4450,7 @@ globalThis.SlotGuide=(()=>{
     try { lang = localStorage.getItem(languageKey) === "uk" ? "uk" : "en"; } catch {}
     copy = globalThis.SlotCopy[lang];
     SlotStaticLocale.apply(lang);
+    SlotUpdates.render(lang);
     if (!units?.length || !mods || !timing || !levels || !globalThis.SlotEffectiveData) throw new Error(copy.missing);
     unitSelect(); selectBuild(readBuild()); fields();
     el("language").addEventListener("change",e => {
@@ -4391,6 +4458,7 @@ globalThis.SlotGuide=(()=>{
       copy = SlotCopy[lang];
       try { localStorage.setItem(languageKey,lang); } catch {}
       SlotStaticLocale.apply(lang);
+      SlotUpdates.render(lang);
       unitSelect();
       fields();
       paintCalc();
