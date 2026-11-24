@@ -3168,10 +3168,6 @@ globalThis.SlotGuideRules=(()=>{
     "Nudge moves one reel down by one cell and brings in a new symbol at the top. Blast removes all instances of one symbol appearing at least twice, drops the survivors and refills the empty cells.",
     "Nudge опускає один барабан на одну клітинку й додає новий символ згори. Blast прибирає всі копії одного символу, який зустрічається щонайменше двічі, опускає решту й заповнює порожні клітинки.",
     "machines.planNudge / planBlast / blastableSymbols · slot.new · 1.0.3",[],["core-pool","core-priority"]);
-  add("bug-miracle","units","Celestial Miracle with no units standing","Celestial Miracle, коли жоден юніт не стоїть",
-    "Celestial Miracle can select a downed ally for revival when at most one other ally is still standing. This includes a party with everyone down.",
-    "Celestial Miracle може вибрати полеглого союзника для відродження, коли на ногах залишився щонайбільше один інший союзник. Ефект діє, навіть коли полягла вся команда.",
-    catalog+" · combat.faction.updateMiracle · zero / one / two standing",[],["fa-celestial"]);
   add("bug-rockfall","equipment","How long Rockfall delays an enemy","На скільки Rockfall затримує ворога",
     "Rockfall holds selected ordinary enemies out of the opening wave for 2 seconds. Bosses enter on schedule. The item level determines how many enemies it delays.",
     "Rockfall затримує появу вибраних звичайних ворогів на початку хвилі на 2 с. Боси з’являються вчасно. Від рівня предмета залежить кількість затриманих ворогів.",
@@ -3225,9 +3221,6 @@ globalThis.SlotHandbook=(()=>{
     {id:"it-49",summary:[
       "Rockfall delays the selected enemies by 2 seconds at every item level. The tooltip says 1.5 seconds.",
       "На всіх рівнях Rockfall затримує вибраних ворогів на 2 секунди. В описі предмета вказано 1,5 секунди."]},
-    {id:"fa-celestial",summary:[
-      "Miracle can still revive eligible allies after the last ally falls. Its description says one ally must be left standing.",
-      "Miracle може підняти придатних до відродження союзників навіть після загибелі останнього бійця. В описі фракції сказано, що на ногах має залишитися один союзник."]},
     {id:"enemy-broods",title:["Grimwolf Orc’s wolf packs","Вовчі зграї Grimwolf Orc"],summary:[
       "Grimwolf Orc summons two wolves about every 5 seconds. The enemy collection lists a 3-second interval.",
       "Grimwolf Orc викликає двох вовків приблизно кожні 5 секунд. У колекції ворогів вказано інтервал у 3 секунди."]}
