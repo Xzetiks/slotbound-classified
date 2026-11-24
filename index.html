@@ -2646,29 +2646,19 @@ globalThis.SlotHiddenCooldowns = [{
 globalThis.SlotGuideHits = [
   {
     id:"area-basic-imprints", section:"hits",
-    title:["Which imprints work on area and explosive basic attacks?","Які відбитки працюють із базовими атаками по площі та вибухами?"],
-    body:["All ten units use area or explosive basic attacks, even against one enemy. Eight have a separate damaging skill. The two spearmen extend their basic attacks instead, and the target order matters.",
-      "Усі десять юнітів завдають базовими атаками шкоди по площі або вибухом, навіть по одному ворогу. У вісьмох уміння завдає окремого удару. У двох списників воно подовжує базову атаку, і спрацювання залежать від того, у яку ціль влучив спис."],
+    title:["Which imprints fail on area and explosive basic attacks?","Які відбитки не працюють на базових атаках по площі та вибухом?"],
+    body:["For all ten units below, basic attacks cannot trigger Earthquake, Execute, Fear, Meteor, Skyward Strike or Soul Split, even on the first target.",
+      "У всіх десяти юнітів нижче базові атаки не запускають Earthquake, Execute, Fear, Meteor, Skyward Strike та Soul Split навіть на першій цілі."],
     grid:{
-      headers:[["Unit","Юніт"],["Basic hit","Базове влучання"],["Pierce imprint on basics","Відбиток Pierce на базових атаках"],["Skill","Уміння"]],
-      groupStarts:{0:["Separate skill hits","Уміння завдає окремого удару"],8:["Extended basic attacks","Уміння подовжує базову атаку"]},
+      headers:[["Units","Юніти"],["Additional restrictions","Додаткові обмеження"]],
       rows:[
-        ["Grenadier","Timed Keg",true,false],["Demolitionist","Concussion Bomb",true,false],
-        ["Steppe Cavalry","Call of the Plains",false,true],["Centaur","Wild Stampede",false,true],
-        ["Fallen Angel","Rupturing Descent",false,true],["Angel of Ruin","Doom Resonance",false,true],
-        ["Victor","Volt Saw",false,true],["Magnus","Ruin Tremor",false,false],
-        ["Spear Adept","Lance Extension",false,true],["Lance Master","Peerless Spear",false,true]
-      ].map(([name,skill,explosion,pierces])=>[[name,name],explosion?["Explosion","Вибух"]:["Area damage","Шкода по площі"],
-        pierces?["Pierces extra targets","Пробиває додаткові цілі"]:["No extra hits","Без додаткових влучань"],[skill,skill]])
+        [["Grenadier, Demolitionist, Magnus","Grenadier, Demolitionist, Magnus"],["Pierce adds no extra hits.","Pierce не дає додаткових влучань."]],
+        [["Spear Adept, Lance Master","Spear Adept, Lance Master"],["Only the first enemy hit by an extended thrust can trigger on-hit imprints. Further enemies hit by the spear give no Lifesteal healing either.","Відбитки від влучання можуть спрацювати лише на першій цілі подовженого випаду. Наступні цілі, яких зачепив спис, також не дають зцілення від Lifesteal."]],
+        [["Steppe Cavalry, Centaur, Fallen Angel, Angel of Ruin, Victor","Steppe Cavalry, Centaur, Fallen Angel, Angel of Ruin, Victor"],["No additional restrictions found.","Додаткових обмежень не виявлено."]]
+      ]
     },
-    facts:[
-      [["Shared hit effects","Спільні ефекти влучань"],["Basic hits and separate skill hits can trigger Bash, Blind, Chain, Chill, Poison, Timeless and Transfer. A kill can activate Overdrive. Lifesteal V restores 4 HP per 100 damage dealt (12 HP on a standard single-target basic hit). These hits cannot trigger Earthquake, Execute, Fear, Meteor, Skyward Strike or Soul Split.","Базові влучання й окремі удари вмінь можуть запустити Bash, Blind, Chain, Chill, Poison, Timeless і Transfer. Убивство може активувати Overdrive. Lifesteal V відновлює 4 HP за 100 шкоди (для звичайного одиночного базового удару — 12 HP). Earthquake, Execute, Fear, Meteor, Skyward Strike та Soul Split від цих влучань не спрацьовують."]],
-      [["Basic attack or skill hit?","Базова атака чи удар уміння?"],["Basic attacks can also trigger the Knockback and Shrink imprints. The eight separate skills in the table cannot. Their own effects still apply: for example, Call of the Plains can push an enemy even without the Knockback imprint.","Базові атаки додатково можуть запустити відбитки Knockback і Shrink. Окремі удари восьми вмінь із таблиці цих відбитків не запускають. Власні ефекти вмінь діють: наприклад, Call of the Plains може відштовхнути ворога й без відбитка Knockback."]],
-      [["Extended spear: first target or next target?","Подовжений спис: перша чи наступна ціль?"],["The first target of an extended thrust follows the basic-attack rules above, including Knockback and Shrink. Further targets hit by the same spear take damage without triggering the wielder’s on-hit imprints or healing the wielder through Lifesteal. This applies to the skill’s built-in reach; the Pierce imprint adds its own projectile.","Для першої цілі подовженого випаду діють усі наведені вище правила базової атаки, включно з Knockback і Shrink. Наступні цілі, яких зачепив сам спис, отримують шкоду, але не запускають відбитки від влучання й не лікують списника через Lifesteal. Це стосується досяжності самого вміння. Відбиток Pierce додає окремий снаряд."]],
-      [["Reading the Pierce column","Як читати колонку Pierce"],["The column shows extra hits granted by the imprint. A grenade can still catch nearby enemies in its blast, and Magnus can hit up to three enemies with a swing.","Колонка показує додаткові влучання саме від відбитка. Вибух гранати все одно може зачепити сусідніх ворогів, а Magnus одним замахом може вразити до трьох цілей."]]
-    ],
     unitIds:["W:legendary:3:마그누스","A:rare:2:척탄병","A:rare:3:폭파대장","S:prism:2:창술사","S:prism:3:랜스마스터","H:rare:2:초원 기병","H:rare:3:켄타로우스","D:advanced:2:빅터","D:prism:2:타락천사","D:prism:3:파멸의 천사"],
-    links:["im-earthquake","im-execute","im-fear","im-meteor","im-skyward_strike","im-soul_split","im-pierce","im-lifesteal","secondary-hit-imprints","pierce-imprint","sk-ruin_tremor","sk-timed_keg","sk-concussion_bomb","sk-call_of_the_plains","sk-wild_stampede","sk-rupturing_descent","sk-doom_resonance","sk-volt_saw","sk-lance_extension","sk-peerless_spear"],
+    links:["im-earthquake","im-execute","im-fear","im-meteor","im-skyward_strike","im-soul_split","im-pierce","im-lifesteal","secondary-hit-imprints","pierce-imprint"],
     tags:"AoE splash землетрус пробиття вампіризм"
   },
   {
@@ -3277,8 +3267,8 @@ globalThis.SlotHandbook=(()=>{
   // One searchable report per behavior, even when several articles describe it.
   const bugs=[
     {id:"area-basic-imprints",possible:true,summary:[
-      "Several on-hit imprints skip even the first enemy struck by these units. Their tooltips omit this restriction.",
-      "Кілька відбитків не спрацьовують навіть на першому ворогові, якого вражають ці юніти. В описах відбитків це обмеження пропущено."]},
+      "The imprint descriptions omit these basic-attack restrictions.",
+      "Описи відбитків не згадують цих обмежень базової атаки."]},
     {id:"overlord-shadows",also:["im-overlord"],title:["Overlord’s Eye Bat disappears when attacking","Тінь Eye Bat зникає під час атаки"],summary:[
       "When an Eye Bat recruited by Overlord tries to attack, its sprite disappears. The bat can stay alive at full HP while stuck in the attack animation. Its sprite sheet has no attack animation registered.",
       "Коли завербований через Overlord кажан Eye Bat намагається атакувати, він зникає з екрана. Кажан може залишатися живим із повним запасом HP, застрягнувши в стані атаки. Гра не має зареєстрованої анімації атаки для його спрайта."]},
@@ -3921,6 +3911,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#guide?id=area-basic-imprints","Shortened the area-attack guide to the imprints that fail on basic hits and the exceptions for each group of units.","У статті про базові атаки по площі залишено відбитки, які не спрацьовують, і додаткові обмеження для кожної групи юнітів."],
     ["2026-11-25","changed","#guide?id=area-basic-imprints","Grouped all ten area attackers by skill and added the first-target rule for extended spears.","У таблиці згруповано всіх десятьох юнітів за типом уміння й додано правило першої цілі для подовженого списа."],
     ["2026-11-25","changed","#guide?id=soul-state","Clarified when a Transfer hit from Ruin can start a Chain bounce.","Уточнено, коли влучання Transfer від аури Ruin може запустити відскок Chain."],
     ["2026-11-25","changed","#guide?id=area-basic-imprints","Grouped shared imprint effects and the differences between basic attacks and Magnus’s Ruin Tremor.","Спільні ефекти базових атак і Ruin Tremor у Magnus згруповано окремо від відмінностей."],
