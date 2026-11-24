@@ -2646,8 +2646,8 @@ globalThis.SlotGuideHits = [
   {
     id:"area-basic-imprints", section:"hits",
     title:["Which imprints work on area and explosive basic attacks?","Які відбитки працюють із базовими атаками по площі та вибухами?"],
-    body:["The ten units below cannot trigger Earthquake, Execute, Fear, Meteor, Skyward Strike or Soul Split with their basic attacks. The game treats each hit as area damage or an explosion, even against a single enemy.",
-      "У десяти юнітів із таблиці базові атаки не запускають Earthquake, Execute, Fear, Meteor, Skyward Strike та Soul Split. Гра зараховує кожне таке влучання як шкоду по площі або вибух, навіть коли ворог лише один."],
+    body:["The ten units below deal area or explosive damage even when their basic attack hits a single enemy. Magnus’s Ruin Tremor skill shares most of their imprint interactions.",
+      "Базові атаки десяти юнітів із таблиці завдають шкоди по площі або вибухом навіть по одному ворогу. Для вміння Ruin Tremor у Magnus діє більшість тих самих правил."],
     grid:{
       headers:[["Unit","Юніт"],["Basic hit type","Тип базового влучання"],["Pierce imprint","Відбиток Pierce"]],
       rows:[
@@ -2658,10 +2658,10 @@ globalThis.SlotGuideHits = [
         pierces?["Pierces extra targets","Пробиває додаткові цілі"]:["No extra hits","Без додаткових влучань"]])
     },
     facts:[
-      [["Lifesteal V","Lifesteal V"],["All ten heal for 4 HP per 100 damage dealt by these basic hits. A standard single-target basic hit heals for 12 HP at the same imprint level.","Усі десять юнітів відновлюють 4 HP за кожні 100 шкоди від цих базових влучань. Звичайне базове влучання по одній цілі на тому самому рівні відбитка відновлює 12 HP."]],
-      [["Pierce imprint","Відбиток Pierce"],["Magnus can already hit three enemies with one swing. Pierce V adds no further hits. Grenadier and Demolitionist can still hit nearby enemies with their own explosion.","Magnus і без відбитка може зачепити трьох ворогів одним замахом. Pierce V не додає влучань. Grenadier та Demolitionist усе одно можуть уражати сусідніх ворогів власним вибухом."]],
-      [["Imprints these hits can trigger","Які відбитки можуть спрацювати"],["Bash, Blind, Chain, Chill, Knockback, Poison, Shrink, Timeless and Transfer can all trigger. A kill can also activate Overdrive.","Можуть спрацювати Bash, Blind, Chain, Chill, Knockback, Poison, Shrink, Timeless та Transfer. Убивство також може активувати Overdrive."]],
-      [["Magnus and Ruin Tremor","Magnus і Ruin Tremor"],["Ruin Tremor can trigger Bash, Blind, Chain, Chill, Poison, Timeless and Transfer. Lifesteal V heals Magnus for 4 HP per 100 damage, and a kill can activate Overdrive. Knockback and Shrink require his basic swing. Earthquake, Execute, Fear, Meteor, Skyward Strike and Soul Split trigger from neither attack.","Ruin Tremor може запустити Bash, Blind, Chain, Chill, Poison, Timeless і Transfer. Lifesteal V лікує Magnus на 4 HP за 100 шкоди, а вбивство може активувати Overdrive. Knockback і Shrink працюють лише від базового замаху. Earthquake, Execute, Fear, Meteor, Skyward Strike та Soul Split не спрацьовують від жодного з цих двох ударів."]]
+      [["Both basic attacks and Ruin Tremor","І базові атаки, і Ruin Tremor"],["Hits can trigger Bash, Blind, Chain, Chill, Poison, Timeless and Transfer. Kills can activate Overdrive. Lifesteal V restores 4 HP per 100 damage dealt, compared with 12 HP on a standard single-target basic hit.","Влучання можуть запустити Bash, Blind, Chain, Chill, Poison, Timeless і Transfer. Убивство може активувати Overdrive. Lifesteal V відновлює 4 HP за 100 шкоди. Для порівняння, звичайне одиночне базове влучання відновлює 12 HP."]],
+      [["Basic attacks only","Лише базові атаки"],["Knockback and Shrink work on the listed units’ basic attacks, including Magnus’s swing. Neither triggers from Ruin Tremor.","Knockback і Shrink працюють від базових атак усіх юнітів у таблиці, зокрема від замаху Magnus. Ruin Tremor їх не запускає."]],
+      [["Neither hit type","Не спрацьовують в обох випадках"],["Earthquake, Execute, Fear, Meteor, Skyward Strike and Soul Split.","Earthquake, Execute, Fear, Meteor, Skyward Strike та Soul Split."]],
+      [["Pierce imprint","Відбиток Pierce"],["The table shows which basic attacks gain extra hits from Pierce. Magnus already hits up to three enemies with a swing. Grenadier and Demolitionist can hit nearby enemies with their own explosion.","У таблиці видно, чи додає Pierce влучання до базової атаки. Magnus і без відбитка може зачепити замахом трьох ворогів. Grenadier та Demolitionist можуть уражати сусідніх ворогів власним вибухом."]]
     ],
     unitIds:["W:legendary:3:마그누스","A:rare:2:척탄병","A:rare:3:폭파대장","S:prism:2:창술사","S:prism:3:랜스마스터","H:rare:2:초원 기병","H:rare:3:켄타로우스","D:advanced:2:빅터","D:prism:2:타락천사","D:prism:3:파멸의 천사"],
     links:["im-earthquake","im-execute","im-fear","im-meteor","im-skyward_strike","im-soul_split","im-pierce","im-lifesteal","secondary-hit-imprints","pierce-imprint","sk-ruin_tremor"],
@@ -3150,7 +3150,7 @@ globalThis.SlotGuideRules=(()=>{
       f("Skill modifiers","Модифікатори вмінь","Amplify (Skill) modifies skill size. It has no on-hit trigger for either a basic attack or a Ruin tick. Amplify (Skill) and Fortify have no standard imprint source.","Amplify (Skill) змінює розмір уміння. Ні базова атака, ні тик Ruin не запускають його як ефект від влучання. Amplify (Skill) та Fortify не мають стандартного джерела отримання.")
     ],["soul-actors","im-undying_soul","im-ruin","im-transfer","buildup-speed","volley-speed"]);
   soul.grid={headers:[pair("Imprint","Відбиток"),pair("Spirit’s basic attack","Базова атака духа"),pair("Spirit’s Ruin aura","Аура Ruin духа")],rows:[
-    [pair("Transfer"),pair("Spreads hit damage","Поширює шкоду влучання"),pair("Spreads tick damage","Поширює шкоду тика")],
+    [pair("Transfer"),pair("Spreads hit damage","Поширює шкоду влучання"),pair("Spreads tick damage. While the carrier is alive, that Transfer hit can start Chain. In spirit form the spread still lands, but cannot start Chain.","Поширює шкоду тика. За життя носія це влучання Transfer може запустити Chain. У формі духа шкода все ще поширюється, але відскоку Chain не буде.")],
     [pair("Buildup"),pair("Can empower the next attack","Може посилити наступну атаку"),pair("Does not charge or consume Buildup","Не заряджає й не витрачає Buildup")],
     [pair("Volley"),pair("Can add a follow-up hit (melee or ranged)","Може додати повторне влучання в ближньому чи дальньому бою"),pair("Does not count as a shot","Не зараховується як постріл")],
     [pair("Ruin"),pair("No attack required","Не потребує атаки"),pair("Continues dealing periodic damage","Продовжує завдавати періодичної шкоди")],
@@ -3909,6 +3909,8 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#guide?id=soul-state","Clarified when a Transfer hit from Ruin can start a Chain bounce.","Уточнено, коли влучання Transfer від аури Ruin може запустити відскок Chain."],
+    ["2026-11-25","changed","#guide?id=area-basic-imprints","Grouped shared imprint effects and the differences between basic attacks and Magnus’s Ruin Tremor.","Спільні ефекти базових атак і Ruin Tremor у Magnus згруповано окремо від відмінностей."],
     ["2026-11-25","changed","#guide?id=soul-state","Which imprints still work on spirit attacks, Ruin ticks and the final death of an Undying Soul.","Які відбитки працюють від атак духа, тиків Ruin і під час остаточної загибелі Undying Soul."],
     ["2026-11-25","changed","#guide?id=area-basic-imprints","Listed the imprints Magnus can trigger with Ruin Tremor.","Уточнено, які відбитки Magnus може запускати вмінням Ruin Tremor."],
     ["2026-11-25","changed","#guide?id=boar-bear","Which mage imprints trigger when the boar or bear hits, and who gets the healing.","Які відбитки мага запускають удари кабана й ведмедя та хто отримує лікування."],
