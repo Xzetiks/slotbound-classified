@@ -2661,10 +2661,10 @@ globalThis.SlotGuideHits = [
       [["Lifesteal V","Lifesteal V"],["All ten heal for 4 HP per 100 damage dealt by these basic hits. A standard single-target basic hit heals for 12 HP at the same imprint level.","Усі десять юнітів відновлюють 4 HP за кожні 100 шкоди від цих базових влучань. Звичайне базове влучання по одній цілі на тому самому рівні відбитка відновлює 12 HP."]],
       [["Pierce imprint","Відбиток Pierce"],["Magnus can already hit three enemies with one swing. Pierce V adds no further hits. Grenadier and Demolitionist can still hit nearby enemies with their own explosion.","Magnus і без відбитка може зачепити трьох ворогів одним замахом. Pierce V не додає влучань. Grenadier та Demolitionist усе одно можуть уражати сусідніх ворогів власним вибухом."]],
       [["Imprints these hits can trigger","Які відбитки можуть спрацювати"],["Bash, Blind, Chain, Chill, Knockback, Poison, Shrink, Timeless and Transfer can all trigger. A kill can also activate Overdrive.","Можуть спрацювати Bash, Blind, Chain, Chill, Knockback, Poison, Shrink, Timeless та Transfer. Убивство також може активувати Overdrive."]],
-      [["Magnus and Ruin Tremor","Magnus і Ruin Tremor"],["Magnus can trigger Knockback and Shrink with his basic swing. His Ruin Tremor skill triggers neither.","Базовий замах Magnus може запустити Knockback та Shrink. Його вміння Ruin Tremor не запускає жоден із цих двох відбитків."]]
+      [["Magnus and Ruin Tremor","Magnus і Ruin Tremor"],["Ruin Tremor can trigger Bash, Blind, Chain, Chill, Poison, Timeless and Transfer. Lifesteal V heals Magnus for 4 HP per 100 damage, and a kill can activate Overdrive. Knockback and Shrink require his basic swing. Earthquake, Execute, Fear, Meteor, Skyward Strike and Soul Split trigger from neither attack.","Ruin Tremor може запустити Bash, Blind, Chain, Chill, Poison, Timeless і Transfer. Lifesteal V лікує Magnus на 4 HP за 100 шкоди, а вбивство може активувати Overdrive. Knockback і Shrink працюють лише від базового замаху. Earthquake, Execute, Fear, Meteor, Skyward Strike та Soul Split не спрацьовують від жодного з цих двох ударів."]]
     ],
     unitIds:["W:legendary:3:마그누스","A:rare:2:척탄병","A:rare:3:폭파대장","S:prism:2:창술사","S:prism:3:랜스마스터","H:rare:2:초원 기병","H:rare:3:켄타로우스","D:advanced:2:빅터","D:prism:2:타락천사","D:prism:3:파멸의 천사"],
-    links:["im-earthquake","im-execute","im-fear","im-meteor","im-skyward_strike","im-soul_split","im-pierce","im-lifesteal","secondary-hit-imprints","pierce-imprint"],
+    links:["im-earthquake","im-execute","im-fear","im-meteor","im-skyward_strike","im-soul_split","im-pierce","im-lifesteal","secondary-hit-imprints","pierce-imprint","sk-ruin_tremor"],
     tags:"AoE splash землетрус пробиття вампіризм"
   },
   {
@@ -2946,7 +2946,7 @@ globalThis.SlotGuideCombat = [
      "Якщо одна атака по площі зачепить і ворога, і його відокремлену душу, ворог може отримати шкоду двічі. Удар, переданий через душу, не запускає нових ефектів від влучання."],
     [
       f("Which hit creates a soul?","Яке влучання створює душу?","Soul Split requires the primary hit of a basic attack. The next target of a piercing shot, reflected damage, damage over time and skill hits cannot create one. The eight-second cooldown belongs to the carrier and follows it when it changes targets.","Для «Розколу душі» потрібне первинне влучання базової атаки. Подальше влучання пробивного снаряда, відбита чи періодична шкода та влучання вміння не створюють душу. Восьмисекундна перезарядка належить носію і зберігається, коли той змінює ціль."),
-      f("Undying Soul","Невмируща душа","The original unit becomes invulnerable while rising as an Undying Soul. The soul form cannot trigger Soul Split, and its final removal cannot start a second resurrection.","Боєць стає невразливим, поки постає як Невмируща душа. У цій формі він не може запустити «Розкол душі», а остаточна загибель не запускає нового воскресіння.")
+      f("Undying Soul","Невмируща душа","The original unit becomes invulnerable while rising as an Undying Soul. Once transformed, the carrier cannot create enemy souls with Soul Split. Transfer still works from the spirit’s own hits and its Ruin aura.","Боєць стає невразливим, поки постає як Невмируща душа. У формі духа боєць не може створювати душі ворогів через Soul Split. Transfer продовжує працювати від власних влучань духа й від його аури Ruin.")
     ], "combat.soul_split.onHit / wrapDamage · probe_undying_soul.lua · test_five_imprint_combo.lua", "Soul Split Undying Soul soul target ghost відбиток дух душа невмируща тінь розкол");
 
   topic("enemy-broods", ["Wolf packs, Eye Bat broods and summoned Imps", "Вовчі зграї, виводки кажанів і викликані біси"],
@@ -3140,10 +3140,23 @@ globalThis.SlotGuideRules=(()=>{
     tests+" · combat.cursed_mushroom · endless.poisonScale",
     [f("Wave 300","Хвиля 300","With 1,000,000 donor HP and 2% Poison, a regular tick dealt 99. A level I Mushroom transfer dealt 12,000 per tick.","За 1 000 000 HP донора й отрути 2% звичайний тик завдав 99. Після передачі через Mushroom I кожен тик завдав 12 000."),
      f("Repeated transfers","Повторні передачі","At effective item level IV the first transfer was 24,000 and the next 28,800. Two donors could leave two independent schedules on one survivor.","На ефективному рівні предмета IV перша передача дала 24 000, наступна — 28 800. Два донори могли залишити два незалежні набори тиків на одній цілі.")],["it-08","im-poison","chain-transfer-poison"]);
-  add("soul-state","hits","What survives the Undying Soul transformation","Які ефекти зберігає Undying Soul",
-    "After the carrier becomes an Undying Soul, its Ruin aura can still trigger Transfer. While the carrier is alive, the same aura can also apply Poison or start a Chain bounce.",
-    "Після переходу носія у форму Undying Soul його аура Ruin зберігає здатність запускати Transfer. За життя носія та сама аура може також накладати Poison або запускати відскок Chain.",
-    tests,[],["soul-actors","im-undying_soul","im-ruin"]);
+  const soul=add("soul-state","hits","Which imprints work in Undying Soul form?","Які відбитки працюють у формі Undying Soul?",
+    "The spirit can trigger Transfer with its own basic attacks. If it also carries Ruin, each aura tick can trigger Transfer independently, even between attacks. Buildup and Volley still work on eligible basic attacks.",
+    "Базові атаки духа можуть запускати Transfer. Якщо носій також має Ruin, тики аури можуть окремо запускати Transfer навіть між атаками. Buildup і Volley продовжують працювати на придатних для них базових атаках.",
+    "1.0.4 · check_soul_matrix.py · check_undying_current.py",[
+      f("Summons and followers","Призвані істоти й послідовники","The spirit does not summon a new Shadow Clone or Colossus. It no longer counts as an active Overlord for shadow followers.","Дух не викликає нового Shadow Clone чи Colossus. Для тіньових послідовників він більше не вважається активним носієм Overlord."),
+      f("Enemy stats and incoming hits","Характеристики ворогів і вхідні удари","The spirit no longer provides Majesty. It is invulnerable to ordinary incoming attacks, so Block and Fortify offer no further protection and those hits do not activate Enlarge.","Дух більше не накладає Majesty на ворогів. Він невразливий до звичайних вхідних атак, тому Block та Fortify не дають додаткового захисту, а такі удари не активують Enlarge."),
+      f("When the last living ally falls","Коли гине останній живий союзник","The spirit is removed. Self-Destruct can start its death explosion, and an unused Revival can start its revival sequence, but neither keeps the spirit on the field. Undying Soul does not create a second spirit.","Дух зникає з поля. Self-Destruct може запустити передсмертний вибух, а невитрачений Revival — процес воскресіння. В обох випадках дух усе одно залишає поле. Undying Soul не створює другого духа."),
+      f("Skill modifiers","Модифікатори вмінь","Amplify (Skill) modifies skill size. It has no on-hit trigger for either a basic attack or a Ruin tick. Amplify (Skill) and Fortify have no standard imprint source.","Amplify (Skill) змінює розмір уміння. Ні базова атака, ні тик Ruin не запускають його як ефект від влучання. Amplify (Skill) та Fortify не мають стандартного джерела отримання.")
+    ],["soul-actors","im-undying_soul","im-ruin","im-transfer","buildup-speed","volley-speed"]);
+  soul.grid={headers:[pair("Imprint","Відбиток"),pair("Spirit’s basic attack","Базова атака духа"),pair("Spirit’s Ruin aura","Аура Ruin духа")],rows:[
+    [pair("Transfer"),pair("Spreads hit damage","Поширює шкоду влучання"),pair("Spreads tick damage","Поширює шкоду тика")],
+    [pair("Buildup"),pair("Can empower the next attack","Може посилити наступну атаку"),pair("Does not charge or consume Buildup","Не заряджає й не витрачає Buildup")],
+    [pair("Volley"),pair("Can add a follow-up hit (melee or ranged)","Може додати повторне влучання в ближньому чи дальньому бою"),pair("Does not count as a shot","Не зараховується як постріл")],
+    [pair("Ruin"),pair("No attack required","Не потребує атаки"),pair("Continues dealing periodic damage","Продовжує завдавати періодичної шкоди")],
+    [pair("Pierce, Relentless"),pair("No piercing hit or new speed stacks","Без пробиття та нових зарядів швидкості"),pair("Neither triggers","Не спрацьовують")],
+    [pair("Bash, Blind, Chain, Chill, Earthquake, Execute, Fear, Knockback, Lifesteal, Meteor, Overdrive, Poison, Shrink, Skyward Strike, Soul Split, Timeless"),pair("No new activation or healing","Без нового спрацювання чи лікування"),pair("No new activation or healing","Без нового спрацювання чи лікування")]
+  ]};
   const echoes=add("echo-filters","effects","Which skills can be copied or gain an extra target?","Які навички можна скопіювати або поширити на ще одну ціль?",
     "Diviner and Oracle inspect the ally’s primary skill. Branching Bloom makes a separate check for an eligible multi-target attack. The caster still needs a valid target during the fight.",
     "Diviner та Oracle перевіряють головну навичку союзника. Branching Bloom окремо перевіряє, чи підходить атака по кількох цілях. У бою все одно має бути придатна ціль.",
@@ -3896,6 +3909,8 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#guide?id=soul-state","Which imprints still work on spirit attacks, Ruin ticks and the final death of an Undying Soul.","Які відбитки працюють від атак духа, тиків Ruin і під час остаточної загибелі Undying Soul."],
+    ["2026-11-25","changed","#guide?id=area-basic-imprints","Listed the imprints Magnus can trigger with Ruin Tremor.","Уточнено, які відбитки Magnus може запускати вмінням Ruin Tremor."],
     ["2026-11-25","changed","#guide?id=boar-bear","Which mage imprints trigger when the boar or bear hits, and who gets the healing.","Які відбитки мага запускають удари кабана й ведмедя та хто отримує лікування."],
     ["2026-11-25","changed","#guide?id=area-basic-imprints","Renamed the area-attack guide to cover all affected imprints.","Стаття про базові атаки по площі отримала назву, що охоплює всі відповідні відбитки."],
     ["2026-11-25","added","#guide?id=area-basic-imprints","Ten units whose basic attacks skip six imprints, with separate Pierce and Lifesteal rules.","Десять юнітів, чиї базові атаки пропускають шість відбитків, і окремі правила для Pierce та Lifesteal."],
