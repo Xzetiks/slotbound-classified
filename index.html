@@ -2626,6 +2626,30 @@ globalThis.SlotHiddenCooldowns = [{
 <script>
 globalThis.SlotGuideHits = [
   {
+    id:"area-basic-imprints", section:"hits",
+    title:["Which units cannot trigger Earthquake with basic attacks?","У яких юнітів базові атаки не запускають Earthquake?"],
+    body:["The ten units below cannot trigger Earthquake, Execute, Fear, Meteor, Skyward Strike or Soul Split with their basic attacks. The game treats each hit as area damage or an explosion, even against a single enemy.",
+      "У десяти юнітів із таблиці базові атаки не запускають Earthquake, Execute, Fear, Meteor, Skyward Strike та Soul Split. Гра зараховує кожне таке влучання як шкоду по площі або вибух, навіть коли ворог лише один."],
+    grid:{
+      headers:[["Unit","Юніт"],["Basic hit type","Тип базового влучання"],["Pierce imprint","Відбиток Pierce"]],
+      rows:[
+        ["Magnus",false,false],["Grenadier",true,false],["Demolitionist",true,false],
+        ["Spear Adept",false,true],["Lance Master",false,true],["Steppe Cavalry",false,true],["Centaur",false,true],
+        ["Victor",false,true],["Fallen Angel",false,true],["Angel of Ruin",false,true]
+      ].map(([name,explosion,pierces])=>[[name,name],explosion?["Explosion","Вибух"]:["Area damage","Шкода по площі"],
+        pierces?["Pierces extra targets","Пробиває додаткові цілі"]:["No extra hits","Без додаткових влучань"]])
+    },
+    facts:[
+      [["Lifesteal V","Lifesteal V"],["All ten heal for 4 HP per 100 damage dealt by these basic hits. A standard single-target basic hit heals for 12 HP at the same imprint level.","Усі десять юнітів відновлюють 4 HP за кожні 100 шкоди від цих базових влучань. Звичайне базове влучання по одній цілі на тому самому рівні відбитка відновлює 12 HP."]],
+      [["Pierce imprint","Відбиток Pierce"],["Magnus can already hit three enemies with one swing. Pierce V adds no further hits. Grenadier and Demolitionist can still hit nearby enemies with their own explosion.","Magnus і без відбитка може зачепити трьох ворогів одним замахом. Pierce V не додає влучань. Grenadier та Demolitionist усе одно можуть уражати сусідніх ворогів власним вибухом."]],
+      [["Imprints these hits can trigger","Які відбитки можуть спрацювати"],["Bash, Blind, Chain, Chill, Knockback, Poison, Shrink, Timeless and Transfer can all trigger. A kill can also activate Overdrive.","Можуть спрацювати Bash, Blind, Chain, Chill, Knockback, Poison, Shrink, Timeless та Transfer. Убивство також може активувати Overdrive."]],
+      [["Magnus and Ruin Tremor","Magnus і Ruin Tremor"],["Magnus can trigger Knockback and Shrink with his basic swing. His Ruin Tremor skill triggers neither.","Базовий замах Magnus може запустити Knockback та Shrink. Його вміння Ruin Tremor не запускає жоден із цих двох відбитків."]]
+    ],
+    unitIds:["W:legendary:3:마그누스","A:rare:2:척탄병","A:rare:3:폭파대장","S:prism:2:창술사","S:prism:3:랜스마스터","H:rare:2:초원 기병","H:rare:3:켄타로우스","D:advanced:2:빅터","D:prism:2:타락천사","D:prism:3:파멸의 천사"],
+    links:["im-earthquake","im-execute","im-fear","im-meteor","im-skyward_strike","im-soul_split","im-pierce","im-lifesteal","secondary-hit-imprints","pierce-imprint"],
+    tags:"AoE splash землетрус пробиття вампіризм"
+  },
+  {
     id: "pierce-awakening", section: "hits",
     title: ["Where the Pierce awakening looks for a target", "Де пробудження Pierce шукає ціль"],
     body: [
@@ -3213,6 +3237,9 @@ globalThis.SlotHandbook=(()=>{
   const byUnit=new Map(SlotEntities.filter(e=>e.unitId).map(e=>[e.id,e]));
   // One searchable report per behavior, even when several articles describe it.
   const bugs=[
+    {id:"area-basic-imprints",possible:true,summary:[
+      "Several on-hit imprints skip even the first enemy struck by these units. Their tooltips omit this restriction.",
+      "Кілька відбитків не спрацьовують навіть на першому ворогові, якого вражають ці юніти. В описах відбитків це обмеження пропущено."]},
     {id:"overlord-shadows",also:["im-overlord"],title:["Overlord’s Eye Bat disappears when attacking","Тінь Eye Bat зникає під час атаки"],summary:[
       "When an Eye Bat recruited by Overlord tries to attack, its sprite disappears. The bat can stay alive at full HP while stuck in the attack animation. Its sprite sheet has no attack animation registered.",
       "Коли завербований через Overlord кажан Eye Bat намагається атакувати, він зникає з екрана. Кажан може залишатися живим із повним запасом HP, застрягнувши в стані атаки. Гра не має зареєстрованої анімації атаки для його спрайта."]},
@@ -3245,6 +3272,7 @@ globalThis.SlotHandbook=(()=>{
     for(const b of ids){connect(a,b);connect(b,a);}
   }
   for(const [a,ids] of Object.entries({
+    "area-basic-imprints":byId.get("area-basic-imprints").links,
     "internal-cooldowns":["earthquake-clones","skyward-strike","meteor-impact","im-bash","im-timeless"],
     "secondary-hit-imprints":["im-ruin","im-transfer","im-chain","im-pierce","pierce-awakening","internal-cooldowns"],
     "engineer-manuals":["tr-26","fa-engineer","it-32","it-34"]
