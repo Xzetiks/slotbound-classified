@@ -1066,6 +1066,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
 .update-kind {color:var(--gold)}
 .update-history {padding:clamp(1rem,3vw,2rem);max-width:58rem}
 .update-history h2 {font-size:1.15rem;margin:0 0 .65rem}
+.update-history h3 {font-size:.92rem;color:var(--mint);margin:.8rem 0 .3rem}
 .update-history ul {list-style:none;padding:0;margin:0 0 1.7rem}
 .update-history ul:last-child {margin-bottom:0}
 .update-history li {display:grid;grid-template-columns:5rem 1fr;gap:.6rem;border-top:1px solid var(--line);padding:.7rem 0}
@@ -4066,54 +4067,64 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
-    ["2026-11-25","changed","#guide?id=speed-ticks","Added low-FPS hit rates for fast and slow builds to the FPS bug report.","У звіті про баг FPS додано порівняння швидкого й повільного білдів за низької частоти кадрів."],
-    ["2026-11-25","added","#guide?id=speed-ticks","Added a bug report showing how higher FPS can reduce a unit’s basic hit rate.","Додано опис багу, через який підвищення FPS може зменшити частоту базових влучань юніта."],
-    ["2026-11-25","changed","#calc","Grouped current and maximum hits/s with the ASPD hard cap, removed attack starts and delivery share, and labeled the chart markers.","Поточні й максимальні влучання/с зібрано поряд із хардкапом ASPD. Прибрано частоту запуску атак і частку влучань, а на графіку підписано позначки."],
-    ["2026-11-25","changed","#roster","Unit names and animation offsets stay visible when scrolling tables sideways. Long unit names are shortened on phones.","Назви юнітів і зсуви анімації залишаються видимими під час горизонтальної прокрутки таблиць. На телефонах довгі назви юнітів скорочуються."],
-    ["2026-11-25","changed","#calc","The hits/s versus ASPD graph keeps the same axes when you adjust animation offset.","На графіку влучань/с від ASPD зміна зсуву анімації тепер зберігає масштаб обох осей."],
-    ["2026-11-25","changed","#calc","Compare the hit rate at your FPS with the lowest FPS reaching each animation offset’s peak.","Для кожного зсуву анімації можна порівняти темп влучань за вибраного FPS із піковим і побачити найнижчий FPS, за якого досягається пік."],
-    ["2026-11-25","added","#calc","Share build copies a link to your unit, level, FPS, animation offset and modifier settings.","Кнопка «Поділитися білдом» копіює посилання на вибраного юніта з його рівнем, FPS, зсувом анімації та налаштуваннями модифікаторів."],
-    ["2026-11-25","changed","#calc","FPS peaks now lists each local maximum and the FPS values that reach it.","Таблиця піків показує кожен локальний максимум влучань/с і значення FPS, за яких його досягнуто."],
-    ["2026-11-25","changed","#calc","Removed the repeated peak hit rate from the FPS dips table.","З таблиці просідань за FPS прибрано колонку, у якій повторювався пік влучань/с."],
-    ["2026-11-25","added","#calc","Compare maximum hits/s at each FPS and see the exact ranges where the rate dips.","Додано графік максимальних влучань/с за кожного FPS і таблицю діапазонів просідання."],
-    ["2026-11-25","added","#calc","Set your average combat FPS to compare hit rates, hard caps and level checkpoints in the calculator and All units.","Введи середній FPS у бою, щоб порівняти частоту влучань, хардкапи й контрольні рівні в калькуляторі та таблиці юнітів."],
-    ["2026-11-25","changed","#roster","Shortened the tooltip for shared calculator settings.","Скорочено підказку про спільні налаштування калькулятора."],
-    ["2026-11-25","changed","#roster","All units now explains its shared calculator settings. Use Reset beside the offset to restore the default offset and modifiers in both tabs.","У вкладці «Усі юніти» додано підказку про спільні налаштування калькулятора. Кнопка «Скинути» біля зсуву повертає початковий зсув і вимикає модифікатори в обох вкладках."],
-    ["2026-11-25","added","#guide?id=machines","Added the machine controls that lock after a jackpot.","Додано пояснення, які дії з автоматом блокує джекпот."],
-    ["2026-11-25","changed","#roster","Unit table column explanations now appear in compact tooltips with wrapped text.","Пояснення колонок у таблиці юнітів тепер з’являються в компактних підказках із переносом тексту."],
-    ["2026-11-25","changed","#calc","Restored class groups in the unit picker. Within each class, units are sorted by rarity, then by name.","У списку вибору юніта повернуто групи за класами. У кожному класі юніти відсортовані за рідкістю, а за однакової рідкості — за назвою."],
-    ["2026-11-25","changed","#calc","The calculator picker groups units by rarity and sorts each group alphabetically. Long selections now fit on one line.","У списку калькулятора юніти згруповані за рідкістю, а в кожній групі — за абеткою. Довгі назви в полі вибору тепер скорочуються до одного рядка."],
-    ["2026-11-25","changed","#roster","Clarified the ASPD hard cap, required level and maximum hit rate in the unit table. Hover over a column heading for its meaning.","У таблиці юнітів уточнено хардкап ASPD, потрібний рівень і максимальний темп влучань. Наведи курсор на заголовок колонки, щоб побачити пояснення."],
-    ["2026-11-25","changed",null,"Removed the latest-update banner from the calculator. Navigation tabs now keep their labels on one line.","Прибрано рядок останнього оновлення над калькулятором. Назви вкладок меню тепер відображаються в один рядок."],
-    ["2026-11-25","changed",null,"Fixed a background stripe below the footer on short pages.","Прибрано смугу іншого кольору під футером на коротких сторінках."],
-    ["2026-11-25","added","#calc","XBlack and a dismantled nine-reel machine now flank the page on wide screens.","На широких екранах ліворуч від сторінки тепер стоїть XBlack, а праворуч лежать розібраний автомат і дев’ять барабанів."],
-    ["2026-11-25","changed","#guide?id=area-basic-imprints","Shortened the area-attack guide to the imprints that fail on basic hits and the exceptions for each group of units.","У статті про базові атаки по площі залишено відбитки, які не спрацьовують, і додаткові обмеження для кожної групи юнітів."],
-    ["2026-11-25","changed","#guide?id=area-basic-imprints","Grouped all ten area attackers by skill and added the first-target rule for extended spears.","У таблиці згруповано всіх десятьох юнітів за типом уміння й додано правило першої цілі для подовженого списа."],
-    ["2026-11-25","changed","#guide?id=soul-state","Clarified when a Transfer hit from Ruin can start a Chain bounce.","Уточнено, коли влучання Transfer від аури Ruin може запустити відскок Chain."],
-    ["2026-11-25","changed","#guide?id=area-basic-imprints","Grouped shared imprint effects and the differences between basic attacks and Magnus’s Ruin Tremor.","Спільні ефекти базових атак і Ruin Tremor у Magnus згруповано окремо від відмінностей."],
-    ["2026-11-25","changed","#guide?id=soul-state","Which imprints still work on spirit attacks, Ruin ticks and the final death of an Undying Soul.","Які відбитки працюють від атак духа, тиків Ruin і під час остаточної загибелі Undying Soul."],
-    ["2026-11-25","changed","#guide?id=area-basic-imprints","Listed the imprints Magnus can trigger with Ruin Tremor.","Уточнено, які відбитки Magnus може запускати вмінням Ruin Tremor."],
-    ["2026-11-25","changed","#guide?id=boar-bear","Which mage imprints trigger when the boar or bear hits, and who gets the healing.","Які відбитки мага запускають удари кабана й ведмедя та хто отримує лікування."],
-    ["2026-11-25","changed","#guide?id=area-basic-imprints","Renamed the area-attack guide to cover all affected imprints.","Стаття про базові атаки по площі отримала назву, що охоплює всі відповідні відбитки."],
-    ["2026-11-25","added","#guide?id=area-basic-imprints","Ten units whose basic attacks skip six imprints, with separate Pierce and Lifesteal rules.","Десять юнітів, чиї базові атаки пропускають шість відбитків, і окремі правила для Pierce та Lifesteal."],
-    ["2026-11-24","added","#guide?id=overlord-shadows","An Eye Bat recruited by Overlord can disappear when it tries to attack.","Завербований через Overlord кажан Eye Bat може зникнути під час атаки."],
-    ["2026-11-24","changed","#guide?id=buildup-speed","Buildup’s hidden attack delay now has a possible-bug label and two examples for Eclipse.","До прихованої затримки Buildup додано позначку «Можливий баг» і два приклади для Eclipse."],
-    ["2026-11-24","removed",null,"Removed the Miracle revival entry.","Вилучено статтю про воскресіння від Miracle."],
-    ["2026-11-24","changed","#roster","Updated attack caps and hidden mechanics for Slotbound 1.0.4.","Оновлено капи швидкості атаки й приховані механіки для Slotbound 1.0.4."]
+    ["2026-11-25","design","changed","#updates","Site updates are now grouped by topic within each date.","Оновлення за кожну дату тепер згруповано за темами."],
+    ["2026-11-25","mechanics","changed","#guide?id=speed-ticks","Added low-FPS hit rates for fast and slow builds to the FPS bug report.","У звіті про баг FPS додано порівняння швидкого й повільного білдів за низької частоти кадрів."],
+    ["2026-11-25","mechanics","added","#guide?id=speed-ticks","Added a bug report showing how higher FPS can reduce a unit’s basic hit rate.","Додано опис багу, через який підвищення FPS може зменшити частоту базових влучань юніта."],
+    ["2026-11-25","design","changed","#calc","Grouped current and maximum hits/s with the ASPD hard cap, removed attack starts and delivery share, and labeled the chart markers.","Поточні й максимальні влучання/с зібрано поряд із хардкапом ASPD. Прибрано частоту запуску атак і частку влучань, а на графіку підписано позначки."],
+    ["2026-11-25","design","changed","#roster","Unit names and animation offsets stay visible when scrolling tables sideways. Long unit names are shortened on phones.","Назви юнітів і зсуви анімації залишаються видимими під час горизонтальної прокрутки таблиць. На телефонах довгі назви юнітів скорочуються."],
+    ["2026-11-25","design","changed","#calc","The hits/s versus ASPD graph keeps the same axes when you adjust animation offset.","На графіку влучань/с від ASPD зміна зсуву анімації тепер зберігає масштаб обох осей."],
+    ["2026-11-25","calculator","changed","#calc","Compare the hit rate at your FPS with the lowest FPS reaching each animation offset’s peak.","Для кожного зсуву анімації можна порівняти темп влучань за вибраного FPS із піковим і побачити найнижчий FPS, за якого досягається пік."],
+    ["2026-11-25","calculator","added","#calc","Share build copies a link to your unit, level, FPS, animation offset and modifier settings.","Кнопка «Поділитися білдом» копіює посилання на вибраного юніта з його рівнем, FPS, зсувом анімації та налаштуваннями модифікаторів."],
+    ["2026-11-25","calculator","changed","#calc","FPS peaks now lists each local maximum and the FPS values that reach it.","Таблиця піків показує кожен локальний максимум влучань/с і значення FPS, за яких його досягнуто."],
+    ["2026-11-25","design","changed","#calc","Removed the repeated peak hit rate from the FPS dips table.","З таблиці просідань за FPS прибрано колонку, у якій повторювався пік влучань/с."],
+    ["2026-11-25","calculator","added","#calc","Compare maximum hits/s at each FPS and see the exact ranges where the rate dips.","Додано графік максимальних влучань/с за кожного FPS і таблицю діапазонів просідання."],
+    ["2026-11-25","calculator","added","#calc","Set your average combat FPS to compare hit rates, hard caps and level checkpoints in the calculator and All units.","Введи середній FPS у бою, щоб порівняти частоту влучань, хардкапи й контрольні рівні в калькуляторі та таблиці юнітів."],
+    ["2026-11-25","design","changed","#roster","Shortened the tooltip for shared calculator settings.","Скорочено підказку про спільні налаштування калькулятора."],
+    ["2026-11-25","calculator","changed","#roster","All units now explains its shared calculator settings. Use Reset beside the offset to restore the default offset and modifiers in both tabs.","У вкладці «Усі юніти» додано підказку про спільні налаштування калькулятора. Кнопка «Скинути» біля зсуву повертає початковий зсув і вимикає модифікатори в обох вкладках."],
+    ["2026-11-25","mechanics","added","#guide?id=machines","Added the machine controls that lock after a jackpot.","Додано пояснення, які дії з автоматом блокує джекпот."],
+    ["2026-11-25","design","changed","#roster","Unit table column explanations now appear in compact tooltips with wrapped text.","Пояснення колонок у таблиці юнітів тепер з’являються в компактних підказках із переносом тексту."],
+    ["2026-11-25","design","changed","#calc","Restored class groups in the unit picker. Within each class, units are sorted by rarity, then by name.","У списку вибору юніта повернуто групи за класами. У кожному класі юніти відсортовані за рідкістю, а за однакової рідкості — за назвою."],
+    ["2026-11-25","design","changed","#calc","The calculator picker groups units by rarity and sorts each group alphabetically. Long selections now fit on one line.","У списку калькулятора юніти згруповані за рідкістю, а в кожній групі — за абеткою. Довгі назви в полі вибору тепер скорочуються до одного рядка."],
+    ["2026-11-25","design","changed","#roster","Clarified the ASPD hard cap, required level and maximum hit rate in the unit table. Hover over a column heading for its meaning.","У таблиці юнітів уточнено хардкап ASPD, потрібний рівень і максимальний темп влучань. Наведи курсор на заголовок колонки, щоб побачити пояснення."],
+    ["2026-11-25","design","changed",null,"Removed the latest-update banner from the calculator. Navigation tabs now keep their labels on one line.","Прибрано рядок останнього оновлення над калькулятором. Назви вкладок меню тепер відображаються в один рядок."],
+    ["2026-11-25","design","changed",null,"Fixed a background stripe below the footer on short pages.","Прибрано смугу іншого кольору під футером на коротких сторінках."],
+    ["2026-11-25","design","added","#calc","XBlack and a dismantled nine-reel machine now flank the page on wide screens.","На широких екранах ліворуч від сторінки тепер стоїть XBlack, а праворуч лежать розібраний автомат і дев’ять барабанів."],
+    ["2026-11-25","mechanics","changed","#guide?id=area-basic-imprints","Shortened the area-attack guide to the imprints that fail on basic hits and the exceptions for each group of units.","У статті про базові атаки по площі залишено відбитки, які не спрацьовують, і додаткові обмеження для кожної групи юнітів."],
+    ["2026-11-25","mechanics","changed","#guide?id=area-basic-imprints","Grouped all ten area attackers by skill and added the first-target rule for extended spears.","У таблиці згруповано всіх десятьох юнітів за типом уміння й додано правило першої цілі для подовженого списа."],
+    ["2026-11-25","mechanics","changed","#guide?id=soul-state","Clarified when a Transfer hit from Ruin can start a Chain bounce.","Уточнено, коли влучання Transfer від аури Ruin може запустити відскок Chain."],
+    ["2026-11-25","mechanics","changed","#guide?id=area-basic-imprints","Grouped shared imprint effects and the differences between basic attacks and Magnus’s Ruin Tremor.","Спільні ефекти базових атак і Ruin Tremor у Magnus згруповано окремо від відмінностей."],
+    ["2026-11-25","mechanics","changed","#guide?id=soul-state","Which imprints still work on spirit attacks, Ruin ticks and the final death of an Undying Soul.","Які відбитки працюють від атак духа, тиків Ruin і під час остаточної загибелі Undying Soul."],
+    ["2026-11-25","mechanics","changed","#guide?id=area-basic-imprints","Listed the imprints Magnus can trigger with Ruin Tremor.","Уточнено, які відбитки Magnus може запускати вмінням Ruin Tremor."],
+    ["2026-11-25","mechanics","changed","#guide?id=boar-bear","Which mage imprints trigger when the boar or bear hits, and who gets the healing.","Які відбитки мага запускають удари кабана й ведмедя та хто отримує лікування."],
+    ["2026-11-25","mechanics","changed","#guide?id=area-basic-imprints","Renamed the area-attack guide to cover all affected imprints.","Стаття про базові атаки по площі отримала назву, що охоплює всі відповідні відбитки."],
+    ["2026-11-25","mechanics","added","#guide?id=area-basic-imprints","Ten units whose basic attacks skip six imprints, with separate Pierce and Lifesteal rules.","Десять юнітів, чиї базові атаки пропускають шість відбитків, і окремі правила для Pierce та Lifesteal."],
+    ["2026-11-24","mechanics","added","#guide?id=overlord-shadows","An Eye Bat recruited by Overlord can disappear when it tries to attack.","Завербований через Overlord кажан Eye Bat може зникнути під час атаки."],
+    ["2026-11-24","mechanics","changed","#guide?id=buildup-speed","Buildup’s hidden attack delay now has a possible-bug label and two examples for Eclipse.","До прихованої затримки Buildup додано позначку «Можливий баг» і два приклади для Eclipse."],
+    ["2026-11-24","mechanics","removed",null,"Removed the Miracle revival entry.","Вилучено статтю про воскресіння від Miracle."],
+    ["2026-11-24","calculator","changed","#roster","Updated attack caps and hidden mechanics for Slotbound 1.0.4.","Оновлено капи швидкості атаки й приховані механіки для Slotbound 1.0.4."]
   ];
   const labels={added:["Added","Додано"],changed:["Changed","Змінено"],removed:["Removed","Вилучено"]};
+  const topics={mechanics:["Mechanics","Механіки"],calculator:["Calculator","Калькулятор"],design:["Design","Дизайн"]};
   function render(lang){
     const uk=lang==="uk", list=document.getElementById("update-history");
     list.replaceChildren();
     const dateFormat=new Intl.DateTimeFormat(uk?"uk-UA":"en-GB",{dateStyle:"long",timeZone:"UTC"});
-    let day,items;
-    for(const [date,kind,href,en,ua] of changes){
+    let day,groups;
+    for(const [date,topic,kind,href,en,ua] of changes){
       if(day!==date){
         day=date;
         const heading=document.createElement("h2"), time=document.createElement("time");
         time.dateTime=date;time.textContent=dateFormat.format(new Date(date+"T00:00:00Z"));
-        heading.append(time);items=document.createElement("ul");list.append(heading,items);
+        heading.append(time);list.append(heading);
+        groups=new Map();
       }
+      if(!groups.has(topic)){
+        const heading=document.createElement("h3"), items=document.createElement("ul");
+        heading.textContent=topics[topic][uk?1:0];
+        list.append(heading,items);
+        groups.set(topic,items);
+      }
+      const items=groups.get(topic);
       const li=document.createElement("li"), label=document.createElement("strong");
       label.textContent=labels[kind][uk?1:0];label.className="update-kind";
       const item=document.createElement(href?"a":"span");
