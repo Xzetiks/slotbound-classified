@@ -1043,10 +1043,12 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
 .strip-card {max-width:120px}
 .unit-picker {position:relative}
 .unit-picker #picker-portrait {width:30px;height:30px;position:absolute;inset-inline-start:8px;top:11px;pointer-events:none;z-index:1}
-.unit-picker #unit {padding-inline-start:44px}
+.unit-picker #unit {padding-inline-start:44px;min-width:0;white-space:nowrap;text-overflow:ellipsis}
 @supports (appearance:base-select) {
   #unit,#unit::picker(select) {appearance:base-select}
-  #unit::picker-icon {display:none}
+  #unit > button {display:block;min-width:0;width:100%;padding:0;border:0;background:none;text-align:start}
+  #unit selectedcontent {display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  #unit selectedcontent img,#unit::picker-icon {display:none}
   #unit::picker(select) {background:var(--deep);color:var(--ink);border:1px solid var(--line);border-radius:8px;max-height:50vh}
   #unit option {display:flex;align-items:center;gap:6px;padding:6px 10px}
   #unit optgroup {padding:5px}
@@ -3941,6 +3943,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#calc","The calculator picker groups units by rarity and sorts each group alphabetically. Long selections now fit on one line.","У списку калькулятора юніти згруповані за рідкістю, а в кожній групі — за абеткою. Довгі назви в полі вибору тепер скорочуються до одного рядка."],
     ["2026-11-25","changed","#roster","Clarified the ASPD hard cap, required level and maximum hit rate in the unit table. Hover over a column heading for its meaning.","У таблиці юнітів уточнено хардкап ASPD, потрібний рівень і максимальний темп влучань. Наведи курсор на заголовок колонки, щоб побачити пояснення."],
     ["2026-11-25","changed",null,"Removed the latest-update banner from the calculator. Navigation tabs now keep their labels on one line.","Прибрано рядок останнього оновлення над калькулятором. Назви вкладок меню тепер відображаються в один рядок."],
     ["2026-11-25","changed",null,"Fixed a background stripe below the footer on short pages.","Прибрано смугу іншого кольору під футером на коротких сторінках."],
@@ -4061,11 +4064,20 @@ globalThis.SlotUpdates=(()=>{
   function unitSelect() {
     const filter = el("class-filter").value;
     el("unit").replaceChildren();
+    if (CSS.supports("appearance", "base-select")) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.append(document.createElement("selectedcontent"));
+      el("unit").append(button);
+    }
     el("class-filter").replaceChildren();
-    for (const [sym, label] of Object.entries(copy.classes)) {
+    const byName = new Intl.Collator(locale());
+    for (const grade of ["prism","legendary","rare","advanced","normal","special"]) {
+      const forms = units.filter(u => u.grade === grade).sort((a,b) => byName.compare(a.name,b.name));
+      if (!forms.length) continue;
       const group = document.createElement("optgroup");
-      group.label = label;
-      for (const u of units.filter(u => u.sym === sym).sort((a,b) => a.name.localeCompare(b.name))) {
+      group.label = copy.grades[grade];
+      for (const u of forms) {
         const option=opt(u.id,u.name+" · "+copy.grades[u.grade]);
         SlotArt.prefix(option,SlotGuide.unitArticle(u.id),"link");
         group.append(option);
