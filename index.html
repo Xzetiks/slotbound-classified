@@ -1204,11 +1204,11 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
         <div class="field"><label for="class-filter" data-i18n="class">Class</label><select id="class-filter"></select></div>
       </div><div class="list-info"><b id="list-count"></b><span id="list-settings"></span></div>
       <div class="table-scroll"><table class="roster-table"><thead><tr>
-        <th scope="col" aria-sort="ascending"><button type="button" data-sort="name" data-i18n="unit">Unit</button></th>
-        <th scope="col"><button type="button" data-sort="class" data-i18n="class">Class</button></th>
-        <th scope="col"><button type="button" data-sort="hard">Hard cap</button></th>
-        <th scope="col"><button type="button" data-sort="level" data-i18n="hardCapLevel">Absorb level at Hard cap</button></th>
-        <th scope="col"><button type="button" data-sort="rate" data-i18n="hitsAtHardCap">Hits/s at Hard cap</button></th>
+        <th scope="col" aria-sort="ascending"><button type="button" data-sort="name" data-i18n="unit" data-i18n-title="rosterUnitTip" title="Unit name and rarity. Select the unit to open its attack speed calculation.">Unit</button></th>
+        <th scope="col"><button type="button" data-sort="class" data-i18n="class" data-i18n-title="rosterClassTip" title="The class of this unit form.">Class</button></th>
+        <th scope="col"><button type="button" data-sort="hard" data-i18n="rosterHardCap" data-i18n-title="rosterHardTip" title="The lowest attack speed (ASPD) at which this unit reaches its maximum basic hits per second with the selected animation offset and combat modifiers.">ASPD hard cap</button></th>
+        <th scope="col"><button type="button" data-sort="level" data-i18n="hardCapLevel" data-i18n-title="rosterLevelTip" title="The first Absorb level at which this unit reaches its ASPD hard cap with the current settings.">Level for hard cap</button></th>
+        <th scope="col"><button type="button" data-sort="rate" data-i18n="rosterMaxHits" data-i18n-title="rosterRateTip" title="The most basic hits this unit can land on one target per second with the current settings. Each hit counts, including a second hit from the same attack.">Max hits/s</button></th>
       </tr></thead><tbody id="roster-body"></tbody></table></div></section>
     </section>
     <section id="guide-view" hidden>
@@ -2516,7 +2516,14 @@ globalThis.SlotLevelPlan = (() => {
     example: "Наприклад, Eclipse",
     class: "Клас",
     unit: "Юніт",
-    hardCapLevel: "Рівень Absorb для Hard cap",
+    hardCapLevel: "Рівень для хардкапу",
+    rosterHardCap: "Хардкап ASPD",
+    rosterMaxHits: "Макс. влучань/с",
+    rosterUnitTip: "Ім’я та рідкість юніта. Вибери юніта, щоб побачити розрахунок швидкості його атак.",
+    rosterClassTip: "Клас юніта в цій формі.",
+    rosterHardTip: "Найменше значення швидкості атаки (ASPD), за якого юніт досягає максимальної кількості базових влучань за секунду з вибраним зсувом анімації та бойовими модифікаторами.",
+    rosterLevelTip: "Перший рівень Absorb, на якому юніт досягає хардкапу ASPD за поточних налаштувань.",
+    rosterRateTip: "Максимальна кількість базових влучань юніта по одній цілі за секунду за поточних налаштувань. Якщо одна атака влучає двічі, враховуються обидва влучання.",
     noScript: "Для роботи калькулятора й довідника увімкни JavaScript у браузері.",
     footerName: "Slotbound · Калькулятор і механіки",
     footerVersion: "Версія гри 1.0.4"
@@ -3934,6 +3941,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#roster","Clarified the ASPD hard cap, required level and maximum hit rate in the unit table. Hover over a column heading for its meaning.","У таблиці юнітів уточнено хардкап ASPD, потрібний рівень і максимальний темп влучань. Наведи курсор на заголовок колонки, щоб побачити пояснення."],
     ["2026-11-25","changed",null,"Removed the latest-update banner from the calculator. Navigation tabs now keep their labels on one line.","Прибрано рядок останнього оновлення над калькулятором. Назви вкладок меню тепер відображаються в один рядок."],
     ["2026-11-25","changed",null,"Fixed a background stripe below the footer on short pages.","Прибрано смугу іншого кольору під футером на коротких сторінках."],
     ["2026-11-25","added","#calc","XBlack and a dismantled nine-reel machine now flank the page on wide screens.","На широких екранах ліворуч від сторінки тепер стоїть XBlack, а праворуч лежать розібраний автомат і дев’ять барабанів."],
