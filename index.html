@@ -1160,6 +1160,41 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
   white-space:normal;
   overflow-wrap:anywhere;
 }
+
+.metric.hard {display:grid;grid-template-columns:1fr 1fr 1.3fr;align-items:start;gap:0;background:var(--panel);border-color:var(--line)}
+.rate-item {min-width:0;padding-inline:clamp(8px,1.5vw,20px);border-inline-start:1px solid var(--line);font-variant-numeric:tabular-nums}
+.rate-item:first-child {padding-inline-start:0;border:0}
+.rate-item:last-child {padding-inline-end:0}
+.rate-item>span,.rate-item>h3 {display:block;margin:0 0 .25rem;font-family:inherit;font-size:.85rem;font-weight:600;line-height:1.25;color:var(--muted)}
+.rate-item>b {display:block;font-size:clamp(1.15rem,2vw,1.8rem);line-height:1.15}
+.rate-item.current>b {color:var(--mint)}
+.rate-item.threshold>b {color:var(--gold)}
+.rate-item small,.rate-item p {font-size:.76rem}
+.readout {grid-template-columns:repeat(2,minmax(0,1fr))}
+.chart-key {display:flex;flex-wrap:wrap;justify-content:flex-end}
+.chart-key .build-dot {background:#fff4d3;width:8px;height:8px;border-radius:50%;margin-left:6px}
+.roster-table :is(th,td):first-child,.offsets :is(th,td):first-child {position:sticky;left:0;z-index:1;background:var(--panel);box-shadow:1px 0 var(--line)}
+.offsets tr.selected td:first-child,.roster-table tr:hover td:first-child {background:#2c3537}
+@media(max-width:670px){
+ .results {display:contents}
+ .layout .cap-grid {order:1;width:100%}
+ .layout .modifiers {order:2}
+ .results>:not(.cap-grid) {order:3;width:100%;min-width:0}
+ .chart-panel>.panel-heading {flex-wrap:wrap}
+ .chart-key {justify-content:flex-start}
+ .chart-key,.rate-item>span,.rate-item>h3 {font-size:.78rem}
+}
+@media(max-width:670px){
+  .roster-table {--unit-content:clamp(78px,calc(65vw - 126px),142px)}
+  .roster-table td:first-child:not([colspan]) {width:var(--unit-content);padding-inline:5px}
+  .roster-table .pick {width:var(--unit-content);gap:5px}
+  .roster-table .pick img {width:24px;height:28px;flex:none}
+  .roster-table .pick-label {min-width:0}
+  .roster-table .pick-name,.roster-table .pick small {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .roster-table th:nth-last-child(-n+2) button {white-space:normal;line-height:1.2;padding-inline:6px}
+  .roster-table th:nth-child(4) {width:6.1em}
+  .roster-table th:nth-child(5) {width:5.7em}
+}
 </style>
   
   
@@ -1230,13 +1265,12 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
           <p class="scenario" data-i18n="scenario">Basic attacks on one target in range at 1× speed. Caps and hits per battle second use your selected FPS.</p>
           <p id="unit-note" class="unit-note" hidden></p>
           <section class="cap-grid" aria-label="ASPD thresholds" data-i18n-aria="thresholds">
-            <article class="metric hard"><div class="metric-label"><i class="marker" aria-hidden="true"></i><h3>Hard cap</h3><span>100%</span></div><div class="metric-value"><b id="hard-val">…</b> <span>ASPD</span></div><p id="hard-level"></p></article>
+            <article class="metric hard"><div class="rate-item current"><span data-i18n="now">Current hits/s</span><b id="current-rate">…</b></div><div class="rate-item"><span data-i18n="rosterMaxHits">Max hits/s</span><b id="max-rate">…</b></div><div class="rate-item threshold"><h3>Hard cap</h3><b><span id="hard-val">…</span> <small>ASPD</small></b><p id="hard-level"></p></div></article>
           </section>
-          <section class="panel chart-panel"><div class="panel-heading"><div><h2 data-i18n="rate">Effective basic attack rate</h2><small data-i18n="rateUnits">Basic hits on one target per battle second</small></div><div class="chart-key"><i></i><span data-i18n="selectedOffset">Selected offset</span></div></div>
+          <section class="panel chart-panel"><div class="panel-heading"><div><h2 data-i18n="rate">Effective basic attack rate</h2><small data-i18n="rateUnits">Basic hits on one target per battle second</small></div><div class="chart-key"><i></i><span data-i18n="selectedOffset">Selected offset</span><i class="build-dot"></i><span data-i18n="yourBuild">Your build</span></div></div>
             <div class="chart-wrap"><canvas id="chart" role="img" aria-label="Basic attack rate by build ASPD" data-i18n-aria="chart"></canvas></div>
             <div class="chart-x" data-i18n="buildAspd">Build ASPD</div>
             <output id="step-detail" aria-live="polite"></output>
-            <div class="readout"><div><span data-i18n="now">Current hits/s</span><b id="current-rate">…</b></div><div><span data-i18n="atHardCap">Hits/s at Hard cap</span><b id="max-rate">…</b></div><div><span data-i18n="attempts">Attack starts/s</span><b id="start-rate">…</b></div><div><span data-i18n="share">Hits delivered</span><b id="share">…</b></div></div>
             <div id="level-table">
               <h3 id="steps-heading" data-i18n="checkpoints">Hit-rate checkpoints</h3>
               <p class="step-help" data-i18n="checkpointHelp">Each row shows the first level that reaches a hit rate with every attack landing. Select a row or tap near a dot on the chart.</p>
@@ -1257,7 +1291,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
           <section class="panel offsets"><div class="panel-heading"><h2 data-i18n="offsetEffect">How offset changes the cap</h2></div><div class="table-scroll"><table><thead><tr><th data-i18n="offsetShort">Offset</th><th>Hard cap</th><th><span data-i18n="hitsPerSecond">Hits/s</span> · <span id="offset-build-fps"></span></th><th data-i18n="firstPeakFps">Lowest FPS at peak</th><th data-i18n="fpsPeakRate">Peak hits/s</th></tr></thead><tbody id="offset-body"></tbody></table></div><p id="offset-search-range"></p><p id="unknown-phase"></p></section>
           <section class="panel breakdown"><details><summary data-i18n="method">How the calculation works</summary><div id="build-breakdown"></div><div id="method">
             <p><b data-i18n="buildAspd">Build ASPD</b><span data-i18n="preparedExplanation"> is your attack speed after Absorb levels and permanent bonuses, on the scale shown in game. The nominal attack period is 20 / ASPD seconds. The game rounds the base cooldown to whole ticks before applying combat modifiers. A 10% bonus to the stat can therefore produce a different rate from a 10% bonus during combat.</span></p>
-            <p data-i18n="animationExplanation">Each attack reuses the unit’s animation offset. Hits delivered is the share of expected basic hits that land for the cycles started. Raven can deliver two arrows per cycle.</p>
+            <p data-i18n="animationExplanation">Each attack reuses the unit’s animation offset. Raven can deliver two arrows per cycle.</p>
             <p><b>Hard cap</b><span data-i18n="hardExplanation"> is the lowest ASPD that reaches the fastest basic hit rate with every expected hit landing. Its ASPD threshold is rounded up to 0.001. The table shows actual build ASPD at whole Absorb levels.</span></p>
             <p data-i18n="absorbHistory">The calculator applies Absorb levels in one step. At a cooldown rounding boundary, reaching the same level in several steps can shift the cooldown by one tick, even when the game displays the same ASPD.</p>
             <p data-i18n="modelExplanation">The benchmark uses one stationary target within hit range, with active skills disabled. Selected conditional bonuses stay active. Movement, skill casts, extra targets, Buildup, Volley and a different update rate can change the results in combat.</p>
@@ -2569,6 +2603,7 @@ globalThis.SlotLevelPlan = (() => {
     fpsPeakRate: "Пік влучань/с",
     shareBuild: "Поділитися білдом",
     buildLink: "Посилання на білд",
+    yourBuild: "Твій білд",
     averageFps: "Середній FPS",
     fpsHelp: "Введи середній FPS під час бою (30–1000). Розрахунок передбачає рівномірні інтервали між кадрами.",
     endOffset: "0,12 с",
@@ -2586,15 +2621,13 @@ globalThis.SlotLevelPlan = (() => {
     chart: "Залежність темпу базових атак від ASPD збірки",
     now: "Поточні влучання/с",
     atHardCap: "Влучань/с на Hard cap",
-    attempts: "Стартів атаки/с",
-    share: "Частка влучань",
     firstPeakFps: "Найнижчий FPS на піку",
     offsetEffect: "Як зсув змінює кап",
     offsetShort: "Зсув",
     hitsAtHardCap: "Влучань/с на Hard cap",
     method: "Як працює розрахунок",
     preparedExplanation: " — швидкість після рівнів Absorb і постійних бонусів, у шкалі інтерфейсу гри. Номінальний період атаки дорівнює 20 / ASPD секунд. Спершу гра округлює базову затримку до цілих тиків, а потім застосовує бойові модифікатори. Тому +10% до характеристики та +10% під час бою можуть дати різний темп.",
-    animationExplanation: "Кожна атака використовує особистий зсув анімації юніта. Частка влучань показує, скільки очікуваних базових ударів розпочатих циклів дійшло до цілі. Raven може випустити дві стріли за цикл.",
+    animationExplanation: "Кожна атака використовує особистий зсув анімації юніта. Raven може випустити дві стріли за цикл.",
     hardExplanation: " — найменша ASPD, яка дає максимальний темп базових влучань за умови, що всі очікувані удари доходять до цілі. Поріг ASPD округлено вгору до 0,001. У таблиці наведено фактичну ASPD збірки на цілих рівнях Absorb.",
     absorbHistory: "Калькулятор додає рівні Absorb за один крок. На межі округлення кулдауну той самий рівень, набраний у кілька кроків, може змінити кулдаун на один тік, хоча у грі відображається та сама ASPD.",
     modelExplanation: "У тесті одна нерухома ціль у межах досяжності удару, активні навички вимкнено, вибрані умовні бонуси діють постійно. Рух, касти, додаткові цілі, Buildup, Volley та інша частота оновлень можуть змінити результат у бою.",
@@ -4029,6 +4062,8 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#calc","Grouped current and maximum hits/s with the ASPD hard cap, removed attack starts and delivery share, and labeled the chart markers.","Поточні й максимальні влучання/с зібрано поряд із хардкапом ASPD. Прибрано частоту запуску атак і частку влучань, а на графіку підписано позначки."],
+    ["2026-11-25","changed","#roster","Unit names and animation offsets stay visible when scrolling tables sideways. Long unit names are shortened on phones.","Назви юнітів і зсуви анімації залишаються видимими під час горизонтальної прокрутки таблиць. На телефонах довгі назви юнітів скорочуються."],
     ["2026-11-25","changed","#calc","The hits/s versus ASPD graph keeps the same axes when you adjust animation offset.","На графіку влучань/с від ASPD зміна зсуву анімації тепер зберігає масштаб обох осей."],
     ["2026-11-25","changed","#calc","Compare the hit rate at your FPS with the lowest FPS reaching each animation offset’s peak.","Для кожного зсуву анімації можна порівняти темп влучань за вибраного FPS із піковим і побачити найнижчий FPS, за якого досягається пік."],
     ["2026-11-25","added","#calc","Share build copies a link to your unit, level, FPS, animation offset and modifier settings.","Кнопка «Поділитися білдом» копіює посилання на вибраного юніта з його рівнем, FPS, зсувом анімації та налаштуваннями модифікаторів."],
@@ -4400,8 +4435,6 @@ globalThis.SlotUpdates=(()=>{
     el("hard-level").textContent = reachLabel(cap.status,hardLV);
     el("current-rate").textContent = num(rate,3);
     el("max-rate").textContent = num(cap.plateau,3);
-    el("start-rate").textContent = num(current.starts,3);
-    el("share").textContent = Number.isFinite(current.fraction) ? num(100*current.fraction,1)+"%" : "—";
     const active = mods.describe(u,state,lang).filter(r => state[r.id].on && r.applies !== false).length;
     el("mod-count").textContent = msg("active",{count:active});
     const body = el("offset-body");
@@ -4650,7 +4683,9 @@ globalThis.SlotUpdates=(()=>{
       button.type = "button";
       const img = node("img");
       img.alt = ""; img.src = u.portrait; img.loading = "lazy";
-      const title = node("span","",u.name);
+      button.title=u.name;
+      const title=node("span","pick-label");
+      title.append(node("span","pick-name",u.name));
       const qualifier = !u.canBasic ? " · " + copy.noBasic : status === "unknown" ? " · " + copy.startsOnly : "";
       title.append(node("small","",copy.grades[u.grade] + qualifier));
       button.append(img,title);
@@ -4738,7 +4773,7 @@ globalThis.SlotUpdates=(()=>{
       canvas.setAttribute("aria-label",cap.status==="none" ? copy.noBasic : copy.unknownHits);
       return;
     }
-    const l=36, r=12, top=14, bottom=25, w=width-l-r, h=height-top-bottom;
+    const l=36, r=12, top=25, bottom=25, w=width-l-r, h=height-top-bottom;
     const axes=offsetAxisLimits(u,options);
     const xmax=Math.ceil(Math.max(axes.hard*1.18,u.baseAspd*1.2,steps[0]?.aspd*1.05 || 0)/10)*10;
     const peak=axes.peak;
@@ -4780,6 +4815,8 @@ globalThis.SlotUpdates=(()=>{
     ctx.fillStyle=gradient;ctx.fill(fill);
     ctx.strokeStyle="#8cdbb8";ctx.lineWidth=2.5;ctx.stroke(path);
     ctx.setLineDash([3,5]);ctx.strokeStyle="#eac775";ctx.lineWidth=1;ctx.beginPath();
+    ctx.fillStyle="#eac775";ctx.textAlign="center";
+    ctx.fillText("Hard cap",Math.max(l+25,Math.min(width-r-25,X(cap.hard))),top-8);
     ctx.moveTo(X(cap.hard),top);ctx.lineTo(X(cap.hard),Y(0));ctx.stroke();
     ctx.setLineDash([]);
     for (const point of chartState.points) {
