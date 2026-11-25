@@ -3262,6 +3262,7 @@ globalThis.SlotGuideRules=(()=>{
     "Гра округлює затримку атаки до цілих тиків. Анімація також має дійти до кадру удару чи випуску. У калькуляторі видно перший цілий рівень Absorb для кожного темпу влучань.",
     "battlefield._updateBig · analysis/t3-800-aspd-stock-v103.json · t3-stock-meter-v103.json",
     [f("Base cooldown","Базова затримка","max(1, floor(1200 / ASPD + 0.5))"),
+     f("Playing below 60 FPS","Гра нижче 60 FPS","Fast builds can lose many basic hits below about 60 FPS. At 1,200 ASPD and a 0.12 s offset, Arbiter landed 15.8 hits/s at 30 FPS, 23.7 at 45, 31.6 at 60 and 60 at 120. At 40 ASPD he stayed near 2 hits/s throughout. The size of the loss depends on the build and offset.","Приблизно нижче 60 FPS юніти з високою ASPD можуть втрачати значну частину базових влучань. За 1 200 ASPD та зсуву 0,12 с Arbiter завдавав 15,8 влучання/с при 30 FPS, 23,7 при 45, 31,6 при 60 і 60 при 120. За 40 ASPD він у всьому цьому діапазоні тримався біля 2 влучань/с. Величина втрати залежить від білду та зсуву."),
      f("Arbiter at 800 ASPD","Arbiter із 800 ASPD","At offset 0.12, exactly 800 gives 30 hits/s. At 800.001 it gives 60. At offset 0.06 the same increase gives about 31.579 hits/s.","За зсуву 0,12 рівно 800 дає 30 влучань/с. За 800,001 — 60. За зсуву 0,06 той самий приріст дає близько 31,579 влучання/с."),
      f("800 ASPD example conditions","Умови прикладу з 800 ASPD","1×, 210 updates per real second, one stationary target in range.","1×, 210 оновлень за реальну секунду, одна нерухома ціль у радіусі.")]);
   basics.calculator=true;
@@ -4065,6 +4066,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#guide?id=speed-ticks","Added low-FPS hit rates for fast and slow builds to the FPS bug report.","У звіті про баг FPS додано порівняння швидкого й повільного білдів за низької частоти кадрів."],
     ["2026-11-25","added","#guide?id=speed-ticks","Added a bug report showing how higher FPS can reduce a unit’s basic hit rate.","Додано опис багу, через який підвищення FPS може зменшити частоту базових влучань юніта."],
     ["2026-11-25","changed","#calc","Grouped current and maximum hits/s with the ASPD hard cap, removed attack starts and delivery share, and labeled the chart markers.","Поточні й максимальні влучання/с зібрано поряд із хардкапом ASPD. Прибрано частоту запуску атак і частку влучань, а на графіку підписано позначки."],
     ["2026-11-25","changed","#roster","Unit names and animation offsets stay visible when scrolling tables sideways. Long unit names are shortened on phones.","Назви юнітів і зсуви анімації залишаються видимими під час горизонтальної прокрутки таблиць. На телефонах довгі назви юнітів скорочуються."],
