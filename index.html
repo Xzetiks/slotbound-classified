@@ -1199,7 +1199,10 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
   .roster-table th:nth-child(5) {width:5.7em}
 }
 
-.guide-bug-note {white-space:pre-line}
+.guide-bug-note p {margin:0}
+.guide-bug-note p + p,.guide-bug-note .bug-build-link + p {margin-top:1em}
+.bug-build-link {display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;margin-top:.45rem}
+.bug-build-link small {color:var(--muted)}
 </style>
   
   
@@ -3422,9 +3425,11 @@ globalThis.SlotHandbook=(()=>{
   const byUnit=new Map(SlotEntities.filter(e=>e.unitId).map(e=>[e.id,e]));
   // One searchable report per behavior, even when several articles describe it.
   const bugs=[
-    {id:"speed-ticks",title:["Basic hit rate depends on FPS","Частота базових влучань залежить від FPS"],summary:[
-      "Changing only FPS can change how often a unit lands basic hits. Both examples use 1× speed, no modifiers and 60 battle seconds.\n\nHigh Elf reaches the 60 FPS hard cap at Absorb LV 888 (72.732 ASPD, 0.12 s offset). She landed 223 hits at 60 FPS and 158 at 30 FPS, a 29% loss.\n\nSeraph at Absorb LV 3,000 (89.1 ASPD, 0.06 s offset) landed 263 hits at 50 FPS and 248 at 55 FPS. Raising FPS cost him 15 hits.",
-      "Зміна лише FPS може вплинути на кількість базових влучань. В обох прикладах швидкість гри — 1×, модифікатори вимкнено, а влучання пораховано за 60 бойових секунд.\n\nHigh Elf досягає хардкапу для 60 FPS на рівні Absorb 888 (72,732 ASPD, зсув 0,12 с). Вона завдала 223 влучання при 60 FPS і 158 при 30 FPS — на 29% менше.\n\nSeraph на рівні Absorb 3 000 (89,1 ASPD, зсув 0,06 с) завдав 263 влучання при 50 FPS і 248 при 55 FPS. Підвищення FPS коштувало йому 15 влучань."]},
+    {id:"speed-ticks",title:["Basic hit rate depends on FPS","Частота базових влучань залежить від FPS"],summary:["Changing only FPS can change how often a unit lands basic hits. Both examples use 1× speed, no modifiers and 60 battle seconds.", "Зміна лише FPS може вплинути на кількість базових влучань. В обох прикладах швидкість гри — 1×, модифікатори вимкнено, а влучання пораховано за 60 бойових секунд."],
+     examples:[
+      {text:["High Elf reaches the 60 FPS hard cap at Absorb LV 888 (72.732 ASPD, 0.12 s offset). She landed 223 hits at 60 FPS and 158 at 30 FPS, a 29% loss.", "High Elf досягає хардкапу для 60 FPS на рівні Absorb 888 (72,732 ASPD, зсув 0,12 с). Вона завдала 223 влучання при 60 FPS і 158 при 30 FPS — на 29% менше."],build:{unit:"A:advanced:3:하이 엘프",lv:888,ms:120,fps:60},compareFps:30},
+      {text:["Seraph at Absorb LV 3,000 (89.1 ASPD, 0.06 s offset) landed 263 hits at 50 FPS and 248 at 55 FPS. Raising FPS cost him 15 hits.", "Seraph на рівні Absorb 3 000 (89,1 ASPD, зсув 0,06 с) завдав 263 влучання при 50 FPS і 248 при 55 FPS. Підвищення FPS коштувало йому 15 влучань."],build:{unit:"A:prism:3:세라프",lv:3000,ms:60,fps:50},compareFps:55}
+     ]},
     {id:"area-basic-imprints",possible:true,summary:[
       "The imprint descriptions omit these basic-attack restrictions.",
       "Описи відбитків не згадують цих обмежень базової атаки."]},
@@ -3890,7 +3895,7 @@ globalThis.SlotGuide=(()=>{
   function txt(value) {return String(value??"").toLocaleLowerCase().replace(/[’‘']/g,"").replace(/[-_]/g," ");}
   const index=new Map(entries.map(e=>{
     const owners=(e.unitIds||[]).map(id=>SlotHandbook.formToEntry.get(id)?.title);
-    return [e.id,txt([e.title,e.kind,e.tags,e.body,e.facts,e.grid?.headers,e.grid?.rows,owners,bugByArticle.get(e.id)?.summary].flat(Infinity).join(" "))];
+    return [e.id,txt([e.title,e.kind,e.tags,e.body,e.facts,e.grid?.headers,e.grid?.rows,owners,bugByArticle.get(e.id)?.summary,bugByArticle.get(e.id)?.examples?.map(x=>x.text)].flat(Infinity).join(" "))];
   }));
   const kindId=e=>e.kind?.[0]||"";
   function openFilters(changes,replace=false) {
@@ -3910,8 +3915,19 @@ globalThis.SlotGuide=(()=>{
     box.append(trail,heading);
     const bug=bugByArticle.get(e.id);
     if(bug){
-      const note=prose("p","guide-bug-note",t(bug.summary),e,"",inlineLink);
-      note.prepend(bugBadge(bug)," ");
+      const note=element("div","guide-bug-note");
+      const summary=prose("p","",t(bug.summary),e,"",inlineLink);
+      summary.prepend(bugBadge(bug)," ");note.append(summary);
+      for(const example of bug.examples||[]){
+        const {build,compareFps}=example;
+        const href="#calc?"+new URLSearchParams({v:1,...build});
+        const button=link(tr("Open calculator","Відкрити калькулятор"),href,"guide-link roster-reset");
+        const name=rosterById.get(build.unit).name;
+        button.setAttribute("aria-label",button.textContent+" · "+name);
+        const row=element("div","bug-build-link");
+        row.append(button,element("small","",tr("Compare "+build.fps+" → "+compareFps+" FPS","Порівняй "+build.fps+" → "+compareFps+" FPS")));
+        note.append(prose("p","",t(example.text),e,"",inlineLink),row);
+      }
       box.append(note);
     }
     if(t(e.body)) box.append(prose("p","guide-lead",t(e.body),e,"",inlineLink));
@@ -4070,6 +4086,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","mechanics","added","#guide?id=speed-ticks","Open either FPS bug example directly in the calculator with its tested settings.","Обидва приклади багу FPS можна відкрити в калькуляторі з налаштуваннями перевіреного білду."],
     ["2026-11-25","mechanics","changed","#guide?id=speed-ticks","Grouped the High Elf and Seraph examples together in the FPS bug report.","Обидва приклади, High Elf і Seraph, об’єднано у блоці про баг FPS."],
     ["2026-11-25","design","changed","#updates","The update history now has separate Mechanics, Design and Calculator tabs.","В історії оновлень з’явилися окремі вкладки «Механіки», «Дизайн» і «Калькулятор»."],
     ["2026-11-25","mechanics","changed","#guide?id=speed-ticks","Replaced the 1,200 ASPD example in the FPS bug report with High Elf and Seraph at attainable speeds.","У статті про баг FPS замінено приклад із 1 200 ASPD на High Elf і Seraph із досяжною швидкістю атаки."],
