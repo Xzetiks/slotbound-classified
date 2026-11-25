@@ -1107,6 +1107,23 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
 @container (max-width:360px) {
   .language-picker label {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 }
+
+.column-tip {
+  position:fixed;
+  z-index:20;
+  width:max-content;
+  max-width:min(15rem, calc(100vw - 16px));
+  padding:9px 12px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:var(--deep);
+  color:var(--ink);
+  box-shadow:0 4px 14px #0005;
+  font-size:.85rem;
+  line-height:1.45;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
 </style>
   
   
@@ -1206,12 +1223,18 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
         <div class="field"><label for="class-filter" data-i18n="class">Class</label><select id="class-filter"></select></div>
       </div><div class="list-info"><b id="list-count"></b><span id="list-settings"></span></div>
       <div class="table-scroll"><table class="roster-table"><thead><tr>
-        <th scope="col" aria-sort="ascending"><button type="button" data-sort="name" data-i18n="unit" data-i18n-title="rosterUnitTip" title="Unit name and rarity. Select the unit to open its attack speed calculation.">Unit</button></th>
-        <th scope="col"><button type="button" data-sort="class" data-i18n="class" data-i18n-title="rosterClassTip" title="The class of this unit form.">Class</button></th>
-        <th scope="col"><button type="button" data-sort="hard" data-i18n="rosterHardCap" data-i18n-title="rosterHardTip" title="The lowest attack speed (ASPD) at which this unit reaches its maximum basic hits per second with the selected animation offset and combat modifiers.">ASPD hard cap</button></th>
-        <th scope="col"><button type="button" data-sort="level" data-i18n="hardCapLevel" data-i18n-title="rosterLevelTip" title="The first Absorb level at which this unit reaches its ASPD hard cap with the current settings.">Level for hard cap</button></th>
-        <th scope="col"><button type="button" data-sort="rate" data-i18n="rosterMaxHits" data-i18n-title="rosterRateTip" title="The most basic hits this unit can land on one target per second with the current settings. Each hit counts, including a second hit from the same attack.">Max hits/s</button></th>
-      </tr></thead><tbody id="roster-body"></tbody></table></div></section>
+        <th scope="col" aria-sort="ascending"><button type="button" data-sort="name" data-i18n="unit" aria-describedby="rosterUnitTip">Unit</button></th>
+        <th scope="col"><button type="button" data-sort="class" data-i18n="class" aria-describedby="rosterClassTip">Class</button></th>
+        <th scope="col"><button type="button" data-sort="hard" data-i18n="rosterHardCap" aria-describedby="rosterHardTip">ASPD hard cap</button></th>
+        <th scope="col"><button type="button" data-sort="level" data-i18n="hardCapLevel" aria-describedby="rosterLevelTip">Level for hard cap</button></th>
+        <th scope="col"><button type="button" data-sort="rate" data-i18n="rosterMaxHits" aria-describedby="rosterRateTip">Max hits/s</button></th>
+      </tr></thead><tbody id="roster-body"></tbody></table></div>
+        <div class="column-tip" role="tooltip" id="rosterUnitTip" data-i18n="rosterUnitTip" hidden>Unit name and rarity. Select the unit to open its attack speed calculation.</div>
+        <div class="column-tip" role="tooltip" id="rosterClassTip" data-i18n="rosterClassTip" hidden>The class of this unit form.</div>
+        <div class="column-tip" role="tooltip" id="rosterHardTip" data-i18n="rosterHardTip" hidden>The lowest attack speed (ASPD) at which this unit reaches its maximum basic hits per second with the selected animation offset and combat modifiers.</div>
+        <div class="column-tip" role="tooltip" id="rosterLevelTip" data-i18n="rosterLevelTip" hidden>The first Absorb level at which this unit reaches its ASPD hard cap with the current settings.</div>
+        <div class="column-tip" role="tooltip" id="rosterRateTip" data-i18n="rosterRateTip" hidden>The most basic hits this unit can land on one target per second with the current settings. Each hit counts, including a second hit from the same attack.</div>
+      </section>
     </section>
     <section id="guide-view" hidden>
       <div class="intro"><h1 data-i18n="guideHeading">Hidden mechanics</h1><p data-i18n="guideIntro">Explore hit triggers, internal cooldowns and interactions the game leaves out of its tooltips.</p></div>
@@ -3943,6 +3966,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#roster","Unit table column explanations now appear in compact tooltips with wrapped text.","Пояснення колонок у таблиці юнітів тепер з’являються в компактних підказках із переносом тексту."],
     ["2026-11-25","changed","#calc","Restored class groups in the unit picker. Within each class, units are sorted by rarity, then by name.","У списку вибору юніта повернуто групи за класами. У кожному класі юніти відсортовані за рідкістю, а за однакової рідкості — за назвою."],
     ["2026-11-25","changed","#calc","The calculator picker groups units by rarity and sorts each group alphabetically. Long selections now fit on one line.","У списку калькулятора юніти згруповані за рідкістю, а в кожній групі — за абеткою. Довгі назви в полі вибору тепер скорочуються до одного рядка."],
     ["2026-11-25","changed","#roster","Clarified the ASPD hard cap, required level and maximum hit rate in the unit table. Hover over a column heading for its meaning.","У таблиці юнітів уточнено хардкап ASPD, потрібний рівень і максимальний темп влучань. Наведи курсор на заголовок колонки, щоб побачити пояснення."],
@@ -4348,6 +4372,48 @@ globalThis.SlotUpdates=(()=>{
     else if (rect.bottom>bounds.bottom) scroller.scrollTop+=rect.bottom-bounds.bottom;
     scheduleChart();
   }
+  function bindColumnTips() {
+    let timer, active;
+    function close() {
+      clearTimeout(timer);
+      if (active) active.hidden = true;
+      active = null;
+    }
+    function show(button, tip) {
+      close();
+      const rect = button.getBoundingClientRect();
+      if (!rect.width) return;
+      active = tip;
+      tip.hidden = false;
+      const left = rect.left + (rect.width - tip.offsetWidth) / 2;
+      tip.style.left = Math.max(8, Math.min(left, document.documentElement.clientWidth - tip.offsetWidth - 8)) + "px";
+      const top = rect.bottom + 6;
+      tip.style.top = (top + tip.offsetHeight <= innerHeight - 8 ? top : Math.max(8, rect.top - tip.offsetHeight - 6)) + "px";
+    }
+    for (const button of document.querySelectorAll(".roster-table [aria-describedby]")) {
+      const tip = el(button.getAttribute("aria-describedby"));
+      button.addEventListener("pointerenter", event => {
+        if (event.pointerType === "touch") return;
+        close();
+        timer = setTimeout(() => show(button, tip), 1200);
+      });
+      button.addEventListener("pointerleave", () => {
+        clearTimeout(timer);
+        timer = setTimeout(close, 180);
+      });
+      button.addEventListener("focus", () => {
+        if (button.matches(":focus-visible")) show(button, tip);
+      });
+      button.addEventListener("blur", close);
+      button.addEventListener("click", close);
+      tip.addEventListener("pointerenter", () => clearTimeout(timer));
+      tip.addEventListener("pointerleave", close);
+    }
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    window.addEventListener("hashchange", close);
+    document.addEventListener("keydown", event => { if (event.key === "Escape") close(); });
+  }
   function paintRoster() {
     const query = el("search").value.toLowerCase().trim();
     const sym = el("class-filter").value;
@@ -4571,6 +4637,7 @@ globalThis.SlotUpdates=(()=>{
       for (const modifier of Object.values(state)) modifier.on = false;
       refresh(true);
     });
+    bindColumnTips();
     el("search").addEventListener("input",paintRoster);
     el("class-filter").addEventListener("change",paintRoster);
     for (const button of document.querySelectorAll(".roster-table [data-sort]")) {
