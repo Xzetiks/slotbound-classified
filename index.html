@@ -547,7 +547,7 @@ summary {
 #fps-readout {display:block;color:var(--gold);margin:.4rem 0}
 #fps-panel .panel-heading {flex-wrap:wrap}
 #fps-panel select {width:auto}
-#fps-dips summary {cursor:pointer}
+#fps-peaks summary {cursor:pointer}
 .chart-wrap {
   position:relative;
   margin-top:18px;
@@ -1241,14 +1241,14 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
           </section>
           <section class="panel chart-panel" id="fps-panel" aria-labelledby="fps-heading">
             <div class="panel-heading"><h2 id="fps-heading" data-i18n="fpsCurve">Max hits/s by FPS</h2><label><span data-i18n="fpsRange">FPS range</span> <select id="fps-range"><option value="240">30–240</option><option value="1000">30–1000</option></select></label></div>
-            <p class="step-help" data-i18n="fpsSweepHelp">Each point shows the maximum basic hits per battle second at that FPS, using your offset and modifiers. The table lists every whole FPS range below the highest rate on this graph.</p>
+            <p class="step-help" data-i18n="fpsSweepHelp">Each point shows the maximum basic hits per battle second at that FPS, using your offset and modifiers. The table shows each local peak in the selected range. Consecutive FPS values at the same peak share a row.</p>
             <div class="fps-plot"><div class="fps-axis"><span id="fps-high"></span><span id="fps-mid"></span><span>0</span></div><div>
               <svg id="fps-plot" viewBox="0 0 1000 160" preserveAspectRatio="none" role="img" aria-labelledby="fps-heading" aria-describedby="fps-readout"><path id="fps-line" fill="none" stroke="var(--mint)" stroke-width="1.8" vector-effect="non-scaling-stroke"/><line id="fps-cursor" y1="0" y2="160" stroke="var(--gold)" vector-effect="non-scaling-stroke"/></svg>
               <div class="fps-ticks"><span>30 FPS</span><span id="fps-range-end"></span></div>
             </div></div>
             <label class="fps-inspect"><span data-i18n="inspectFps">Inspect FPS</span><input type="range" id="fps-inspect" min="30" max="240" step="1" value="210"></label>
             <output id="fps-readout" for="fps-inspect"></output>
-            <details id="fps-dips"><summary><span data-i18n="fpsDips">FPS dips</span> (<span id="fps-dip-count"></span>)</summary><div class="table-scroll"><table><thead><tr><th data-i18n="fpsRange">FPS range</th><th data-i18n="fpsLow">Lowest hits/s</th></tr></thead><tbody id="fps-dip-rows"></tbody></table></div></details>
+            <details id="fps-peaks"><summary><span data-i18n="fpsPeaks">FPS peaks</span> (<span id="fps-peak-count"></span>)</summary><div class="table-scroll"><table><thead><tr><th data-i18n="fpsRange">FPS range</th><th data-i18n="fpsPeakRate">Peak hits/s</th></tr></thead><tbody id="fps-peak-rows"></tbody></table></div></details>
           </section>
           <section class="panel offsets"><div class="panel-heading"><h2 data-i18n="offsetEffect">How offset changes the cap</h2></div><div class="table-scroll"><table><thead><tr><th data-i18n="offsetShort">Offset</th><th>Hard cap</th><th data-i18n="hitsAtHardCap">Hits/s at Hard cap</th></tr></thead><tbody id="offset-body"></tbody></table></div><p id="unknown-phase"></p></section>
           <section class="panel breakdown"><details><summary data-i18n="method">How the calculation works</summary><div id="build-breakdown"></div><div id="method">
@@ -2559,10 +2559,10 @@ globalThis.SlotLevelPlan = (() => {
     midOffset: "0,06",
     fpsCurve: "Максимум влучань/с залежно від FPS",
     fpsRange: "Діапазон FPS",
-    fpsSweepHelp: "Кожна точка показує максимум базових влучань за бойову секунду за цього FPS із вибраними зсувом і модифікаторами. У таблиці наведено всі діапазони цілих FPS, де частота нижча за найвище значення на графіку.",
+    fpsSweepHelp: "Кожна точка показує максимум базових влучань за бойову секунду за цього FPS із вибраними зсувом і модифікаторами. У таблиці показано кожну локальну вершину у вибраному діапазоні. Сусідні значення FPS з однаковою піковою частотою об’єднано в один рядок.",
     inspectFps: "Переглянути FPS",
-    fpsDips: "Просідання за FPS",
-    fpsLow: "Мінімум влучань/с",
+    fpsPeaks: "Піки за FPS",
+    fpsPeakRate: "Пік влучань/с",
     averageFps: "Середній FPS",
     fpsHelp: "Введи середній FPS під час бою (30–1000). Розрахунок передбачає рівномірні інтервали між кадрами.",
     endOffset: "0,12 с",
@@ -4022,6 +4022,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#calc","FPS peaks now lists each local maximum and the FPS values that reach it.","Таблиця піків показує кожен локальний максимум влучань/с і значення FPS, за яких його досягнуто."],
     ["2026-11-25","changed","#calc","Removed the repeated peak hit rate from the FPS dips table.","З таблиці просідань за FPS прибрано колонку, у якій повторювався пік влучань/с."],
     ["2026-11-25","added","#calc","Compare maximum hits/s at each FPS and see the exact ranges where the rate dips.","Додано графік максимальних влучань/с за кожного FPS і таблицю діапазонів просідання."],
     ["2026-11-25","added","#calc","Set your average combat FPS to compare hit rates, hard caps and level checkpoints in the calculator and All units.","Введи середній FPS у бою, щоб порівняти частоту влучань, хардкапи й контрольні рівні в калькуляторі та таблиці юнітів."],
@@ -4417,21 +4418,23 @@ globalThis.SlotUpdates=(()=>{
     // At 1200 ASPD both the animation multiplier and base cooldown have saturated.
     fpsSamples=[];
     const bands=[];
-    let peak=0,band=null;
+    let peak=0;
     for (let hz=30;hz<=end;hz++) {
       const hits=timing.effectiveAt(u,1200,phase,{...options,fps:hz}).hits;
       fpsSamples[hz]=hits;
       peak=Math.max(peak,hits);
     }
-    for (let hz=30;hz<=end;hz++) {
-      const hits=fpsSamples[hz];
-      if (hits<peak-1e-9) {
-        if (!band) {band={start:hz,end:hz,min:hits};bands.push(band);}
-        band.end=hz;
-        band.min=Math.min(band.min,hits);
-      } else {
-        band=null;
+    // Adjacent equal heights form one summit. Only compare neighbours in view.
+    const tolerance=1e-9;
+    for (let start=30;start<=end;) {
+      const hits=fpsSamples[start];
+      let last=start;
+      while (last<end && Math.abs(fpsSamples[last+1]-hits)<=tolerance) last++;
+      if ((start===30 || hits>fpsSamples[start-1]+tolerance) &&
+          (last===end || hits>fpsSamples[last+1]+tolerance)) {
+        bands.push({start,end:last,hits});
       }
+      start=last+1;
     }
     const path=[];
     for (let hz=30;hz<=end;hz++) {
@@ -4440,13 +4443,13 @@ globalThis.SlotUpdates=(()=>{
     el("fps-line").setAttribute("d",path.join(" "));
     el("fps-high").textContent=num(peak,2);
     el("fps-mid").textContent=num(peak/2,2);
-    el("fps-dip-count").textContent=bands.length;
-    const body=el("fps-dip-rows");
+    el("fps-peak-count").textContent=bands.length;
+    const body=el("fps-peak-rows");
     body.replaceChildren();
     for (const b of bands) {
       const row=body.insertRow();
       row.insertCell().textContent=b.start===b.end?String(b.start):b.start+"–"+b.end;
-      row.insertCell().textContent=num(b.min,3);
+      row.insertCell().textContent=num(b.hits,3);
     }
     inspectFps(inspectedFps);
   }
