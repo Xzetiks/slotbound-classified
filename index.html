@@ -4029,6 +4029,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#calc","The hits/s versus ASPD graph keeps the same axes when you adjust animation offset.","На графіку влучань/с від ASPD зміна зсуву анімації тепер зберігає масштаб обох осей."],
     ["2026-11-25","changed","#calc","Compare the hit rate at your FPS with the lowest FPS reaching each animation offset’s peak.","Для кожного зсуву анімації можна порівняти темп влучань за вибраного FPS із піковим і побачити найнижчий FPS, за якого досягається пік."],
     ["2026-11-25","added","#calc","Share build copies a link to your unit, level, FPS, animation offset and modifier settings.","Кнопка «Поділитися білдом» копіює посилання на вибраного юніта з його рівнем, FPS, зсувом анімації та налаштуваннями модифікаторів."],
     ["2026-11-25","changed","#calc","FPS peaks now lists each local maximum and the FPS values that reach it.","Таблиця піків показує кожен локальний максимум влучань/с і значення FPS, за яких його досягнуто."],
@@ -4709,6 +4710,21 @@ globalThis.SlotUpdates=(()=>{
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(drawChart);
   }
+  let axisKey, axisLimits;
+  function offsetAxisLimits(unit,options) {
+    const key=JSON.stringify([unit.id,options]);
+    if (key!==axisKey) {
+      let hard=0,peak=0;
+      for (let ms=0;ms<=120;ms++) {
+        const c=limits(unit,ms/1000,options);
+        hard=Math.max(hard,c.hard);
+        peak=Math.max(peak,c.plateau);
+      }
+      axisLimits={hard,peak};
+      axisKey=key;
+    }
+    return axisLimits;
+  }
   function drawChart() {
     const canvas = el("chart");
     const width = canvas.clientWidth, height = canvas.clientHeight;
@@ -4723,8 +4739,9 @@ globalThis.SlotUpdates=(()=>{
       return;
     }
     const l=36, r=12, top=14, bottom=25, w=width-l-r, h=height-top-bottom;
-    const xmax = Math.ceil(Math.max(cap.hard*1.18,u.baseAspd*1.2,(steps.at(-1)?.aspd??0)*1.05)/10)*10;
-    const peak = cap.plateau;
+    const axes=offsetAxisLimits(u,options);
+    const xmax=Math.ceil(Math.max(axes.hard*1.18,u.baseAspd*1.2,steps[0]?.aspd*1.05 || 0)/10)*10;
+    const peak=axes.peak;
     const ymax = Math.max(.1,peak)*1.07;
     const X = v => l+w*v/xmax, Y = v => top+h*(1-v/ymax);
     chartState.points = steps.map(step=>({step,x:X(step.aspd),y:Y(step.hits)}));
