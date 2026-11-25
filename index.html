@@ -2771,7 +2771,7 @@ globalThis.SlotHiddenCatalog = [{"id":"fa-abyss","section":"units","kind":["Fact
 <script>
 globalThis.SlotHiddenCooldowns = [{
   id: "internal-cooldowns",
-  section: "hits",
+  section: "imprints",
   title: ["Which imprints have an internal cooldown?", "Які відбитки мають внутрішню перезарядку?"],
   body: ["Each unit tracks its own cooldown for each imprint. The timer starts when the effect triggers. Meteor starts its timer when called, and Timeless starts its timer when time resumes.","Кожен юніт має окрему перезарядку для кожного відбитка. Відлік починається, коли ефект спрацьовує. У Meteor він починається в момент виклику метеора, а в Timeless — після відновлення часу."],
   grid: {
@@ -2801,7 +2801,7 @@ globalThis.SlotHiddenCooldowns = [{
 <script>
 globalThis.SlotGuideHits = [
   {
-    id:"area-basic-imprints", section:"hits",
+    id:"area-basic-imprints", section:"imprints",
     title:["Which target can trigger imprints on an area basic attack?","Яка ціль може активувати відбитки при базовій атаці по площі?"],
     body:["For every unit in the table, only the first enemy hit by an area or explosive basic attack can trigger Earthquake, Execute, Fear, Meteor, Skyward Strike or Soul Split. Lifesteal works differently: these hits can heal from damage to both the first enemy and additional enemies. At level V that is 4 HP per 100 area damage dealt. The extended spear thrust is the exception below.","Для всіх юнітів у таблиці лише перший ворог, у якого влучила базова атака по площі або вибухом, може активувати Earthquake, Execute, Fear, Meteor, Skyward Strike чи Soul Split. Lifesteal діє інакше: зцілення можна отримати як за шкоду першій цілі, так і за шкоду додатковим цілям. На V рівні це 4 HP за кожні 100 шкоди по площі. Виняток — подовжений випад списом, описаний нижче."],
     grid:{
@@ -2817,7 +2817,7 @@ globalThis.SlotGuideHits = [
     tags:"AoE splash землетрус пробиття вампіризм"
   },
   {
-    id: "pierce-awakening", section: "hits",
+    id: "pierce-awakening", section: "awakenings",
     title: ["Where the Pierce awakening looks for a target", "Де пробудження Pierce шукає ціль"],
     body: [
       "Pierce measures a strip from the primary target’s ground position in the direction the spearman faces. Its far edge is 35 units behind that target, and each side is 15 units from the centre line.",
@@ -2832,7 +2832,7 @@ globalThis.SlotGuideHits = [
     tags: "pierce awakening S06 spear Guard line behind ATK penetration пробудження проникнення пронизування пробиття списник позаду"
   },
   {
-    id: "pierce-imprint", section: "hits",
+    id: "pierce-imprint", section: "imprints",
     title: ["How melee and ranged Pierce reach extra targets", "Як відбиток Pierce дістає цілі в ближньому й дальньому бою"],
     body: [
       "With the Pierce imprint, a ranged projectile can keep going after its first hit. A melee hit creates a short projectile behind the enemy instead. Either projectile can hit a given enemy only once.",
@@ -2847,7 +2847,7 @@ globalThis.SlotGuideHits = [
     tags: "imprint pierce archer mage melee ranged projectile piercing spear penetration відбиток лучник маг ближній дальній снаряд пронизування пробиття"
   },
   {
-    id: "pierce-stacking", section: "hits",
+    id: "pierce-stacking", section: "imprints",
     title: ["Using both kinds of Pierce", "Два Pierce на одному юніті"],
     body: [
       "A Guard can equip the Pierce imprint and select the Pierce awakening. They resolve separately. In the same basic attack an enemy behind the lead target can take both the melee imprint hit and the awakening hit.",
@@ -2861,7 +2861,7 @@ globalThis.SlotGuideHits = [
     tags: "Guard combine stack S06 same target Pierce поєднання стакається сумується та сама ціль списник відбиток пробудження"
   },
   {
-    id: "secondary-hit-imprints", section: "hits",
+    id: "secondary-hit-imprints", section: "imprints",
     title: ["Which imprints can primary and secondary hits trigger?","Які відбитки спрацьовують від первинних і вторинних влучань?"],
     body: ["Find the source of the hit in the table. The primary hit is the first enemy struck by a basic attack, including an area attack or explosion. Each row lists effects that can trigger if their own conditions are met. Execute needs a low-HP target, Skyward Strike needs a target it can launch, and Overdrive requires a kill.","Знайди в таблиці джерело влучання. Первинне влучання — це удар по першому ворогу, якого зачепила базова атака, зокрема атака по площі або вибухом. У кожному рядку вказано ефекти, які можуть спрацювати за власних умов. Для Execute у цілі має залишитися мало HP, для Skyward Strike її має бути можливо підкинути, а для Overdrive потрібне вбивство."],
     facts: [
@@ -2893,7 +2893,7 @@ globalThis.SlotGuideHits = [
 <script>
 globalThis.SlotGuideCombat = [
   {
-    id:"defence", section:"hits",
+    id:"defence", section:"items",
     title:["How damage reduction combines","Як поєднуються зниження шкоди"],
     body:["The game applies shared damage reduction first. Frontline Armor then reduces the remaining damage, and Mud Armor reduces what is left. The game rounds once at the end. Block has a separate chance to stop the entire hit.","Спочатку гра застосовує спільне зниження шкоди. Потім Frontline Armor зменшує залишок, а Mud Armor діє на шкоду, яка залишилася після Frontline Armor. Гра округлює результат один раз у кінці. Block має окремий шанс повністю заблокувати удар."],
     facts:[
@@ -2906,7 +2906,7 @@ globalThis.SlotGuideCombat = [
     tags:"defense defence mitigation armor armour reduction block frontline mud damage 70% захист броня болото блок зниження шкоди"
   },
   {
-    id:"overflowing-chalice", section:"hits",
+    id:"overflowing-chalice", section:"items",
     title:["Lifesteal at full HP and Overflowing Chalice","Lifesteal на повному HP та Overflowing Chalice"],
     body:["Lifesteal still produces healing when the attacker is at full HP. Overflowing Chalice counts that healing toward shield gain. Repeated heals compete for a separate shield allowance on each ally.","Lifesteal продовжує створювати лікування, навіть коли нападник має повне HP. Overflowing Chalice враховує це лікування при створенні щита. Кілька лікувань поспіль витрачають спільний для них запас конкретного союзника."],
     facts:[
@@ -2915,7 +2915,7 @@ globalThis.SlotGuideCombat = [
     tags:"overflowing chalice lifesteal heal overheal shield cup holy vampirism щит надлишок лікування чаша келих вампіризм повне здоров’я"
   },
   {
-    id:"earthquake-clones", section:"hits",
+    id:"earthquake-clones", section:"imprints",
     title:["Earthquake on a carrier and its clone","Earthquake у носія та його клона"],
     body:["A Shadow Clone that inherits Earthquake rolls for it independently and has its own cooldown. Its quake can extend an enemy’s stun immediately after its owner triggers one.","Тіньовий клон, який успадкував Earthquake, має власний шанс спрацювання й окрему перезарядку. Його землетрус може подовжити оглушення ворога відразу після землетрусу власника."],
     facts:[
@@ -2924,14 +2924,14 @@ globalThis.SlotGuideCombat = [
     tags:"earthquake shadow clone stun boss cooldown imprint землетрус клон оглушення бос перезарядка"
   },
   {
-    id:"raven-arrows", section:"hits",
+    id:"raven-arrows", section:"units",
     title:["Raven’s two ordinary arrows","Дві звичайні стріли Raven"],
     body:["Raven fires two arrows per basic attack. Each arrow that hits can trigger effects that activate on a basic hit. If the first arrow fails its roll, the second gets its own chance. If the first triggers an effect with a cooldown, the second still has to wait for that effect to be ready.","Raven випускає дві стріли за одну базову атаку. Кожна стріла, що влучила, може активувати ефекти базового влучання. Якщо ефект не спрацював від першої стріли, друга має свій шанс. Якщо ж перша його запустила, на другу теж діє перезарядка цього ефекту."],
     source:"1.0.3 · projectiles.gunslinger_bullet.usesDarkArcherArrow · battlefield /555/740 · verify_guide_raven_quake.lua",
     tags:"Raven Dark Archer DarkArcherArrow second arrow double shot primary basic earthquake archer Рейвен лучник подвійна стріла постріл землетрус"
   },
   {
-    id:"meteor-impact", section:"hits",
+    id:"meteor-impact", section:"imprints",
     title:["Meteor size follows the carrier’s max HP","Розмір Meteor залежить від максимального HP носія"],
     body:["The carrier’s max HP determines both the blast radius and how many enemies Meteor can hit. The impact point is fixed at the instant of the trigger. Enemies have 1.3 seconds to enter or leave the blast area.","Максимальне HP носія визначає і радіус вибуху Meteor, і кількість ворогів, яких він може вразити. Точка падіння фіксується в момент спрацювання. У ворогів є 1,3 с, щоб увійти в зону вибуху або вийти з неї."],
     facts:[
@@ -2942,7 +2942,7 @@ globalThis.SlotGuideCombat = [
     tags:"meteor imprint fall area radius HP size cap 500 1000 max targets метеор відбиток радіус вибух площа здоров’я цілі"
   },
   {
-    id:"skyward-strike", section:"hits",
+    id:"skyward-strike", section:"imprints",
     title:["Skyward Strike has two cooldowns","Два таймери Skyward Strike"],
     body:["The carrier starts a 6-battle-second cooldown when it launches an enemy. The target starts its own 3-battle-second protection when it lands. That protection also applies to a second attacker using Skyward Strike.","Коли носій підкидає ворога, в нього починається перезарядка на 6 бойових секунд. Коли ворог приземляється, він отримує власний захист на 3 бойові секунди. Цей захист діє й проти Skyward Strike іншого нападника."],
     facts:[
@@ -2952,7 +2952,7 @@ globalThis.SlotGuideCombat = [
     tags:"Skyward Strike lift landing airborne AoE radius cooldown ICD knock up підкидання приземлення удар радіус захист перезарядка"
   },
   {
-    id:"opportunity-strikes", section:"hits",
+    id:"opportunity-strikes", section:"traits",
     title:["Which debuffs qualify for Opportunity Strikes?","Які дебафи враховує Opportunity Strikes?"],
     body:["The game checks specific active statuses for Opportunity Strikes. Stun, Poison and Shrink each qualify on their own. An enemy affected only by Blind, Fear, Chill or Knockback still takes the ordinary basic-hit damage.","Для Opportunity Strikes гра перевіряє конкретні активні стани. Оглушення, Poison і Shrink активують бонус кожен окремо. Ворог, на якого діє лише Blind, Fear, Chill або Knockback, отримує звичайну шкоду базового влучання."],
     facts:[
@@ -3353,8 +3353,7 @@ globalThis.SlotGuideRules=(()=>{
 /* Only mechanics with information beyond the tooltip belong in the handbook. */
 globalThis.SlotHandbook=(()=>{
   const sections={
-    hits:[["Hits & internal cooldowns","Влучання та внутрішні перезарядки"],["Which hits trigger effects, when they can trigger again, and whose timer is running.","Які влучання запускають ефекти, коли вони можуть спрацювати знову й кому належить таймер."]],
-    imprints:[["Imprints","Відбитки"],["Secondary hits, stacking rules and interactions between imprints.","Вторинні влучання, накопичення зарядів і взаємодія відбитків."]],
+    imprints:[["Imprints","Відбитки"],["Hit triggers, internal cooldowns and interactions between imprints.","Які влучання активують відбитки, скільки триває їхня перезарядка та як поєднуються їхні ефекти."]],
     traits:[["Traits","Риси"],["Kill credit, eligible targets and conditions behind trait bonuses.","Кому зараховують убивство, які цілі підходять і за яких умов діє бонус риси."]],
     awakenings:[["Awakenings","Пробудження"],["Target selection, extra damage and how an awakening modifies a skill.","Вибір цілей, додаткова шкода та зміни в роботі вмінь."]],
     summons:[["Summons & copies","Призвані істоти й копії"],["Inherited stats, copied effects and what happens when the owner dies.","Успадковані характеристики, скопійовані ефекти й наслідки загибелі власника."]],
@@ -3364,7 +3363,7 @@ globalThis.SlotHandbook=(()=>{
     progression:[["Run mechanics","Механіки забігу"],["Hidden rarity counters, conversion bonuses and adjusted reward odds.","Приховані лічильники рідкості, бонуси конвертації та зміни шансів нагород."]]
   };
   const ruleSections={
-    "speed-ticks":"hits","engineer-manuals":"items","volley-speed":"imprints",
+    "speed-ticks":"units","engineer-manuals":"items","volley-speed":"imprints",
     "poison-relay":"items","soul-state":"imprints","echo-filters":"units",
     "absorb-yield":"progression","absorb-growth":"progression","rarity-roll":"progression",
     "awake-draw":"awakenings","faction-count":"units","core-favorite":"cores","pack-pool":"items",
@@ -3947,7 +3946,7 @@ globalThis.SlotGuide=(()=>{
   function home(container) {
     const shortcuts=element("div","guide-featured");
     for(const id of ["secondary-hit-imprints","internal-cooldowns"]){
-      const e=entryFor(id),a=link("",url(new URLSearchParams(),{s:"hits",id}),"panel guide-shortcut");
+      const e=entryFor(id),a=link("",url(new URLSearchParams(),{s:e.section,id}),"panel guide-shortcut");
       a.append(element("strong","",t(e.title)));
       SlotArt.entryImages(a,e,"card");
       shortcuts.append(a);
@@ -3957,7 +3956,7 @@ globalThis.SlotGuide=(()=>{
     shortcuts.append(bugLink);
     container.append(shortcuts);
     const grid=element("div","guide-sections");
-    const icons={hits:"im-chain",imprints:"im-pierce",traits:"tr-31",awakenings:"aw-S06",summons:"actor-undead-brute",units:"unit-43",items:"it-23",cores:"co-01",progression:"stone-specialstone"};
+    const icons={imprints:"im-pierce",traits:"tr-31",awakenings:"aw-S06",summons:"actor-undead-brute",units:"unit-43",items:"it-23",cores:"co-01",progression:"stone-specialstone"};
     for(const [section,[title,desc]] of Object.entries(sections)) {
       const a=link("",url(new URLSearchParams(),{s:section}),"panel guide-tile");
       a.append(element("h2","",t(title)),element("p","",t(desc)));
@@ -4021,7 +4020,15 @@ globalThis.SlotGuide=(()=>{
   }
   function render(lang) {
     language=lang;
-    const p=read(), section=Object.hasOwn(sections,p.get("s"))?p.get("s"):"";
+    const p=read();
+    if(p.get("s")==="hits"){
+      const article=entryFor(p.get("id"));
+      if(article) p.set("s",article.section||"units");
+      else if(p.get("q")) p.delete("s");
+      else p.set("s","imprints");
+      history.replaceState(history.state,"",location.href.split("#")[0]+url(p,{}));
+    }
+    const section=Object.hasOwn(sections,p.get("s"))?p.get("s"):"";
     const pool=section?entries.filter(e=>e.section===section):entries;
     const query=p.get("q")||"", kind=p.get("k")||"";
     const select=el("guide-section");
@@ -4055,6 +4062,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","mechanics","changed","#guide","Moved hit triggers and cooldowns to Imprints, Raven’s two arrows and attack speed to Units, and damage reduction to Items.","Статті про спрацювання й перезарядки перенесено до відбитків, про дві стріли Raven та швидкість атаки — до юнітів, а про зниження шкоди — до предметів."],
     ["2026-11-26","mechanics","changed","#guide?id=tr-26","Combined Versatile and the class manuals in one article. Flame Call and Flame Descent now open their spirit profiles. Spell Echo and Prophetic Mirror share one skill comparison.","Об’єднано Versatile й класові посібники в одній статті. Flame Call та Flame Descent тепер відкривають профілі відповідних духів. Spell Echo й Prophetic Mirror мають спільну таблицю сумісних умінь."],
     ["2026-11-26","mechanics","changed","#guide?id=absorb-yield","Clarified how Absorb levels, summon stats and favorite-core odds are calculated. Revised examples explain which hit, target or owner matters.","Показано розрахунки рівнів Absorb, характеристик призваних істот і шансів улюблених ядер. У прикладах уточнено, чиє влучання, ціль або характеристика визначає результат."],
     ["2026-11-26","mechanics","removed",null,"Removed the enemy summon and Endless Splitter profiles from the handbook.","З довідника прибрано профілі ворожих викликів та нащадків Endless Splitter."],
