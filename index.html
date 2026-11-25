@@ -539,6 +539,15 @@ summary {
   background:var(--mint);
 }
 
+.fps-plot {display:grid;grid-template-columns:auto minmax(0,1fr);gap:.5rem;margin:1rem 0;color:var(--muted);font-size:.8rem}
+.fps-axis {height:160px;display:flex;flex-direction:column;justify-content:space-between;text-align:right}
+#fps-plot {display:block;width:100%;height:160px;border-block:1px solid var(--line);background:linear-gradient(var(--line),var(--line)) center / 100% 1px no-repeat;cursor:crosshair}
+.fps-ticks,.fps-inspect {display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.fps-inspect input {flex:1;min-width:0}
+#fps-readout {display:block;color:var(--gold);margin:.4rem 0}
+#fps-panel .panel-heading {flex-wrap:wrap}
+#fps-panel select {width:auto}
+#fps-dips summary {cursor:pointer}
 .chart-wrap {
   position:relative;
   margin-top:18px;
@@ -1229,6 +1238,17 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
               <p class="step-help" data-i18n="checkpointHelp">Each row shows the first level that reaches a hit rate with every attack landing. Select a row or tap near a dot on the chart.</p>
               <div class="table-scroll"><table aria-labelledby="steps-heading"><thead><tr><th scope="col" data-i18n="hitsPerSecond">Hits/s</th><th scope="col" data-i18n="requiredLevel">Required Absorb LV</th><th scope="col" data-i18n="buildAspd">Build ASPD</th></tr></thead><tbody id="level-rows"></tbody></table></div>
             </div>
+          </section>
+          <section class="panel chart-panel" id="fps-panel" aria-labelledby="fps-heading">
+            <div class="panel-heading"><h2 id="fps-heading" data-i18n="fpsCurve">Max hits/s by FPS</h2><label><span data-i18n="fpsRange">FPS range</span> <select id="fps-range"><option value="240">30–240</option><option value="1000">30–1000</option></select></label></div>
+            <p class="step-help" data-i18n="fpsSweepHelp">Each point shows the maximum basic hits per battle second at that FPS, using your offset and modifiers. The table lists every whole FPS range below the highest rate on this graph.</p>
+            <div class="fps-plot"><div class="fps-axis"><span id="fps-high"></span><span id="fps-mid"></span><span>0</span></div><div>
+              <svg id="fps-plot" viewBox="0 0 1000 160" preserveAspectRatio="none" role="img" aria-labelledby="fps-heading" aria-describedby="fps-readout"><path id="fps-line" fill="none" stroke="var(--mint)" stroke-width="1.8" vector-effect="non-scaling-stroke"/><line id="fps-cursor" y1="0" y2="160" stroke="var(--gold)" vector-effect="non-scaling-stroke"/></svg>
+              <div class="fps-ticks"><span>30 FPS</span><span id="fps-range-end"></span></div>
+            </div></div>
+            <label class="fps-inspect"><span data-i18n="inspectFps">Inspect FPS</span><input type="range" id="fps-inspect" min="30" max="240" step="1" value="210"></label>
+            <output id="fps-readout" for="fps-inspect"></output>
+            <details id="fps-dips"><summary><span data-i18n="fpsDips">FPS dips</span> (<span id="fps-dip-count"></span>)</summary><div class="table-scroll"><table><thead><tr><th data-i18n="fpsRange">FPS range</th><th data-i18n="fpsPrior">Peak hits/s</th><th data-i18n="fpsLow">Lowest hits/s</th></tr></thead><tbody id="fps-dip-rows"></tbody></table></div></details>
           </section>
           <section class="panel offsets"><div class="panel-heading"><h2 data-i18n="offsetEffect">How offset changes the cap</h2></div><div class="table-scroll"><table><thead><tr><th data-i18n="offsetShort">Offset</th><th>Hard cap</th><th data-i18n="hitsAtHardCap">Hits/s at Hard cap</th></tr></thead><tbody id="offset-body"></tbody></table></div><p id="unknown-phase"></p></section>
           <section class="panel breakdown"><details><summary data-i18n="method">How the calculation works</summary><div id="build-breakdown"></div><div id="method">
@@ -2537,6 +2557,13 @@ globalThis.SlotLevelPlan = (() => {
     hitsPerSecond: "Влучань/с",
     offset: "Зсув анімації",
     midOffset: "0,06",
+    fpsCurve: "Максимум влучань/с залежно від FPS",
+    fpsRange: "Діапазон FPS",
+    fpsSweepHelp: "Кожна точка показує максимум базових влучань за бойову секунду за цього FPS із вибраними зсувом і модифікаторами. У таблиці наведено всі діапазони цілих FPS, де частота нижча за найвище значення на графіку.",
+    inspectFps: "Переглянути FPS",
+    fpsDips: "Просідання за FPS",
+    fpsPrior: "Пік влучань/с",
+    fpsLow: "Мінімум влучань/с",
     averageFps: "Середній FPS",
     fpsHelp: "Введи середній FPS під час бою (30–1000). Розрахунок передбачає рівномірні інтервали між кадрами.",
     endOffset: "0,12 с",
@@ -3996,6 +4023,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","added","#calc","Compare maximum hits/s at each FPS and see the exact ranges where the rate dips.","Додано графік максимальних влучань/с за кожного FPS і таблицю діапазонів просідання."],
     ["2026-11-25","added","#calc","Set your average combat FPS to compare hit rates, hard caps and level checkpoints in the calculator and All units.","Введи середній FPS у бою, щоб порівняти частоту влучань, хардкапи й контрольні рівні в калькуляторі та таблиці юнітів."],
     ["2026-11-25","changed","#roster","Shortened the tooltip for shared calculator settings.","Скорочено підказку про спільні налаштування калькулятора."],
     ["2026-11-25","changed","#roster","All units now explains its shared calculator settings. Use Reset beside the offset to restore the default offset and modifiers in both tabs.","У вкладці «Усі юніти» додано підказку про спільні налаштування калькулятора. Кнопка «Скинути» біля зсуву повертає початковий зсув і вимикає модифікатори в обох вкладках."],
@@ -4358,7 +4386,70 @@ globalThis.SlotUpdates=(()=>{
     const selected=chartState?.steps===steps && chartState.level===level ? chartState.selected : currentStep;
     chartState = {u,aspd,phase,options,cap,rate,steps,hardLV,level,currentStep,selected};
     paintLevelTable();
+    paintFpsCurve();
     scheduleChart();
+  }
+  let inspectedFps, lastBuildFps;
+  let fpsSamples=[];
+  function inspectFps(value) {
+    const slider=el("fps-inspect");
+    inspectedFps=Math.max(30,Math.min(Number(slider.max),Math.round(value)));
+    slider.value=inspectedFps;
+    const x=1000*(inspectedFps-30)/(Number(slider.max)-30);
+    el("fps-cursor").setAttribute("x1",x);
+    el("fps-cursor").setAttribute("x2",x);
+    const label=inspectedFps+" FPS · "+num(fpsSamples[inspectedFps],3)+" "+(lang==="uk"?"влучань/с":"hits/s");
+    el("fps-readout").textContent=label;
+    slider.setAttribute("aria-valuetext",label);
+  }
+  function paintFpsCurve() {
+    const {u,phase,options,cap}=chartState;
+    el("fps-panel").hidden=cap.status!=="verified";
+    if (el("fps-panel").hidden) return;
+    if (lastBuildFps!==fps) {
+      inspectedFps=Math.round(fps);
+      if (fps>240) el("fps-range").value="1000";
+      lastBuildFps=fps;
+    }
+    const end=Number(el("fps-range").value);
+    el("fps-inspect").max=end;
+    el("fps-range-end").textContent=end+" FPS";
+    // At 1200 ASPD both the animation multiplier and base cooldown have saturated.
+    fpsSamples=[];
+    const bands=[];
+    let peak=0,band=null;
+    for (let hz=30;hz<=end;hz++) {
+      const hits=timing.effectiveAt(u,1200,phase,{...options,fps:hz}).hits;
+      fpsSamples[hz]=hits;
+      peak=Math.max(peak,hits);
+    }
+    for (let hz=30;hz<=end;hz++) {
+      const hits=fpsSamples[hz];
+      if (hits<peak-1e-9) {
+        if (!band) {band={start:hz,end:hz,peak,min:hits};bands.push(band);}
+        band.end=hz;
+        band.min=Math.min(band.min,hits);
+      } else {
+        band=null;
+      }
+    }
+    const path=[];
+    for (let hz=30;hz<=end;hz++) {
+      path.push((hz===30?"M":"L")+(1000*(hz-30)/(end-30)).toFixed(3)+" "+(158-156*fpsSamples[hz]/peak).toFixed(3));
+    }
+    el("fps-line").setAttribute("d",path.join(" "));
+    el("fps-high").textContent=num(peak,2);
+    el("fps-mid").textContent=num(peak/2,2);
+    el("fps-dip-count").textContent=bands.length;
+    const body=el("fps-dip-rows");
+    body.replaceChildren();
+    for (const b of bands) {
+      const row=body.insertRow();
+      row.insertCell().textContent=b.start===b.end?String(b.start):b.start+"–"+b.end;
+      row.insertCell().textContent=num(b.peak,3);
+      row.insertCell().textContent=num(b.min,3);
+    }
+    inspectFps(inspectedFps);
   }
   function paintLevelTable() {
     const {steps,cap,hardLV,currentStep,selected}=chartState;
@@ -4642,6 +4733,14 @@ globalThis.SlotUpdates=(()=>{
       setUnit(e.target.value);
     });
     el("phase").addEventListener("input",e=>setPhase(e.target.value));
+    el("fps-range").addEventListener("change",paintFpsCurve);
+    el("fps-inspect").addEventListener("input",event=>inspectFps(event.target.valueAsNumber));
+    function inspectPlot(event) {
+      const rect=el("fps-plot").getBoundingClientRect();
+      inspectFps(30+(event.clientX-rect.left)/rect.width*(Number(el("fps-range").value)-30));
+    }
+    el("fps-plot").addEventListener("pointermove",inspectPlot);
+    el("fps-plot").addEventListener("pointerdown",inspectPlot);
     el("fps").addEventListener("input",event=>{
       const value=event.target.valueAsNumber;
       if (Number.isFinite(value) && event.target.validity.valid) {
