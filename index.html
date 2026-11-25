@@ -1253,7 +1253,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
         <th scope="col"><button type="button" data-sort="level" data-i18n="hardCapLevel" aria-describedby="rosterLevelTip">Level for hard cap</button></th>
         <th scope="col"><button type="button" data-sort="rate" data-i18n="rosterMaxHits" aria-describedby="rosterRateTip">Max hits/s</button></th>
       </tr></thead><tbody id="roster-body"></tbody></table></div>
-        <div class="column-tip" role="tooltip" id="rosterSettingsTip" data-i18n="rosterSettingsTip" hidden>The table uses the calculator’s animation offset and the bonuses that apply to each unit. Reset restores the 0.060 s offset and turns off modifiers in both tabs.</div>
+        <div class="column-tip" role="tooltip" id="rosterSettingsTip" data-i18n="rosterSettingsTip" hidden>The table uses the calculator’s animation offset and the bonuses that apply to each unit.</div>
         <div class="column-tip" role="tooltip" id="rosterUnitTip" data-i18n="rosterUnitTip" hidden>Unit name and rarity. Select the unit to open its attack speed calculation.</div>
         <div class="column-tip" role="tooltip" id="rosterClassTip" data-i18n="rosterClassTip" hidden>The class of this unit form.</div>
         <div class="column-tip" role="tooltip" id="rosterHardTip" data-i18n="rosterHardTip" hidden>The lowest attack speed (ASPD) at which this unit reaches its maximum basic hits per second with the selected animation offset and combat modifiers.</div>
@@ -2524,7 +2524,7 @@ globalThis.SlotLevelPlan = (() => {
     language: "Мова",
     heading: "Калькулятор швидкості атаки",
     intro: "Дізнайся, на яких рівнях Absorb у твого юніта T3 зростає кількість влучань за секунду. Вибрані тут зсув анімації та модифікатори діють і в таблиці «Усі юніти».",
-    rosterSettingsTip: "Таблиця враховує зсув анімації з калькулятора та бонуси, які діють на конкретного юніта. Кнопка «Скинути» повертає зсув до 0,060 с і вимикає модифікатори в обох вкладках.",
+    rosterSettingsTip: "Таблиця враховує зсув анімації з калькулятора та бонуси, які діють на конкретного юніта.",
     build: "Юніт та збірка",
     reset: "Скинути",
     tierUnit: "Юніт T3",
@@ -3992,6 +3992,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#roster","Shortened the tooltip for shared calculator settings.","Скорочено підказку про спільні налаштування калькулятора."],
     ["2026-11-25","changed","#roster","All units now explains its shared calculator settings. Use Reset beside the offset to restore the default offset and modifiers in both tabs.","У вкладці «Усі юніти» додано підказку про спільні налаштування калькулятора. Кнопка «Скинути» біля зсуву повертає початковий зсув і вимикає модифікатори в обох вкладках."],
     ["2026-11-25","added","#guide?id=machines","Added the machine controls that lock after a jackpot.","Додано пояснення, які дії з автоматом блокує джекпот."],
     ["2026-11-25","changed","#roster","Unit table column explanations now appear in compact tooltips with wrapped text.","Пояснення колонок у таблиці юнітів тепер з’являються в компактних підказках із переносом тексту."],
