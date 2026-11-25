@@ -709,6 +709,30 @@ tbody tr.selected {
   font-size:.89rem;
 }
 
+.roster-settings {
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:.5rem;
+}
+#list-settings {
+  cursor:help;
+  text-decoration:underline dotted var(--muted);
+  text-underline-offset:.23em;
+}
+.roster-reset {
+  padding:.25em .8em;
+  border:1px solid var(--muted);
+  border-radius:6px;
+  background:var(--deep);
+  color:var(--ink);
+  font:inherit;
+  cursor:pointer;
+}
+.roster-reset:hover,.roster-reset:focus-visible {
+  border-color:var(--gold);
+  color:var(--gold);
+}
 .list-info b {
   color:var(--ink);
 }
@@ -1167,7 +1191,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
       <div class="panel update-history" id="update-history"></div>
     </section>
     <section id="calc-view">
-      <div class="intro"><h1 data-i18n="heading">Attack speed calculator</h1><p data-i18n="intro">See which Absorb levels increase your Tier 3 unit’s hits per second.</p></div>
+      <div class="intro"><h1 data-i18n="heading">Attack speed calculator</h1><p data-i18n="intro">See which Absorb levels increase your Tier 3 unit’s hits per second. The animation offset and modifiers you choose here also apply to every unit in All units.</p></div>
       <div class="layout">
         <aside class="controls">
           <section class="panel build"><div class="panel-heading"><h2 data-i18n="build">Unit and build</h2><button class="text-btn" id="reset" type="button" data-i18n="reset">Reset</button></div>
@@ -1221,7 +1245,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
       <section class="panel roster-panel"><div class="roster-controls">
         <div class="field"><label for="search" data-i18n="search">Search by name</label><input id="search" type="search" placeholder="e.g. Eclipse" data-i18n-placeholder="example"></div>
         <div class="field"><label for="class-filter" data-i18n="class">Class</label><select id="class-filter"></select></div>
-      </div><div class="list-info"><b id="list-count"></b><span id="list-settings"></span></div>
+      </div><div class="list-info"><b id="list-count"></b><div class="roster-settings"><span id="list-settings" tabindex="0" aria-describedby="rosterSettingsTip"></span><button type="button" class="roster-reset" id="roster-reset" data-i18n="reset">Reset</button></div></div>
       <div class="table-scroll"><table class="roster-table"><thead><tr>
         <th scope="col" aria-sort="ascending"><button type="button" data-sort="name" data-i18n="unit" aria-describedby="rosterUnitTip">Unit</button></th>
         <th scope="col"><button type="button" data-sort="class" data-i18n="class" aria-describedby="rosterClassTip">Class</button></th>
@@ -1229,6 +1253,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
         <th scope="col"><button type="button" data-sort="level" data-i18n="hardCapLevel" aria-describedby="rosterLevelTip">Level for hard cap</button></th>
         <th scope="col"><button type="button" data-sort="rate" data-i18n="rosterMaxHits" aria-describedby="rosterRateTip">Max hits/s</button></th>
       </tr></thead><tbody id="roster-body"></tbody></table></div>
+        <div class="column-tip" role="tooltip" id="rosterSettingsTip" data-i18n="rosterSettingsTip" hidden>The table uses the calculator’s animation offset and the bonuses that apply to each unit. Reset restores the 0.060 s offset and turns off modifiers in both tabs.</div>
         <div class="column-tip" role="tooltip" id="rosterUnitTip" data-i18n="rosterUnitTip" hidden>Unit name and rarity. Select the unit to open its attack speed calculation.</div>
         <div class="column-tip" role="tooltip" id="rosterClassTip" data-i18n="rosterClassTip" hidden>The class of this unit form.</div>
         <div class="column-tip" role="tooltip" id="rosterHardTip" data-i18n="rosterHardTip" hidden>The lowest attack speed (ASPD) at which this unit reaches its maximum basic hits per second with the selected animation offset and combat modifiers.</div>
@@ -2498,7 +2523,8 @@ globalThis.SlotLevelPlan = (() => {
     game: "Гра",
     language: "Мова",
     heading: "Калькулятор швидкості атаки",
-    intro: "Дізнайся, на яких рівнях Absorb у твого юніта T3 зростає кількість влучань за секунду.",
+    intro: "Дізнайся, на яких рівнях Absorb у твого юніта T3 зростає кількість влучань за секунду. Вибрані тут зсув анімації та модифікатори діють і в таблиці «Усі юніти».",
+    rosterSettingsTip: "Таблиця враховує зсув анімації з калькулятора та бонуси, які діють на конкретного юніта. Кнопка «Скинути» повертає зсув до 0,060 с і вимикає модифікатори в обох вкладках.",
     build: "Юніт та збірка",
     reset: "Скинути",
     tierUnit: "Юніт T3",
@@ -3966,6 +3992,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#roster","All units now explains its shared calculator settings. Use Reset beside the offset to restore the default offset and modifiers in both tabs.","У вкладці «Усі юніти» додано підказку про спільні налаштування калькулятора. Кнопка «Скинути» біля зсуву повертає початковий зсув і вимикає модифікатори в обох вкладках."],
     ["2026-11-25","added","#guide?id=machines","Added the machine controls that lock after a jackpot.","Додано пояснення, які дії з автоматом блокує джекпот."],
     ["2026-11-25","changed","#roster","Unit table column explanations now appear in compact tooltips with wrapped text.","Пояснення колонок у таблиці юнітів тепер з’являються в компактних підказках із переносом тексту."],
     ["2026-11-25","changed","#calc","Restored class groups in the unit picker. Within each class, units are sorted by rarity, then by name.","У списку вибору юніта повернуто групи за класами. У кожному класі юніти відсортовані за рідкістю, а за однакової рідкості — за назвою."],
@@ -4391,7 +4418,7 @@ globalThis.SlotUpdates=(()=>{
       const top = rect.bottom + 6;
       tip.style.top = (top + tip.offsetHeight <= innerHeight - 8 ? top : Math.max(8, rect.top - tip.offsetHeight - 6)) + "px";
     }
-    for (const button of document.querySelectorAll(".roster-table [aria-describedby]")) {
+    for (const button of document.querySelectorAll("#roster-view [aria-describedby]")) {
       const tip = el(button.getAttribute("aria-describedby"));
       button.addEventListener("pointerenter", event => {
         if (event.pointerType === "touch") return;
@@ -4615,6 +4642,10 @@ globalThis.SlotUpdates=(()=>{
     el("level").addEventListener("change",e=>{
       level=Number.isSafeInteger(e.target.valueAsNumber) ? Math.max(activeUnit.minLevel,e.target.valueAsNumber) : level;
       e.target.value=level; refresh(false);
+    });
+    el("roster-reset").addEventListener("click",()=>{
+      selectBuild({...defaults(), id:activeUnit.id, level});
+      refresh(true);
     });
     el("reset").addEventListener("click",()=>{const build=defaults();build.id=activeUnit.id;selectBuild(build);refresh(true);});
     el("level-rows").addEventListener("click",event=>{
