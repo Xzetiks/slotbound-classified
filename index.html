@@ -1248,7 +1248,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
             </div></div>
             <label class="fps-inspect"><span data-i18n="inspectFps">Inspect FPS</span><input type="range" id="fps-inspect" min="30" max="240" step="1" value="210"></label>
             <output id="fps-readout" for="fps-inspect"></output>
-            <details id="fps-dips"><summary><span data-i18n="fpsDips">FPS dips</span> (<span id="fps-dip-count"></span>)</summary><div class="table-scroll"><table><thead><tr><th data-i18n="fpsRange">FPS range</th><th data-i18n="fpsPrior">Peak hits/s</th><th data-i18n="fpsLow">Lowest hits/s</th></tr></thead><tbody id="fps-dip-rows"></tbody></table></div></details>
+            <details id="fps-dips"><summary><span data-i18n="fpsDips">FPS dips</span> (<span id="fps-dip-count"></span>)</summary><div class="table-scroll"><table><thead><tr><th data-i18n="fpsRange">FPS range</th><th data-i18n="fpsLow">Lowest hits/s</th></tr></thead><tbody id="fps-dip-rows"></tbody></table></div></details>
           </section>
           <section class="panel offsets"><div class="panel-heading"><h2 data-i18n="offsetEffect">How offset changes the cap</h2></div><div class="table-scroll"><table><thead><tr><th data-i18n="offsetShort">Offset</th><th>Hard cap</th><th data-i18n="hitsAtHardCap">Hits/s at Hard cap</th></tr></thead><tbody id="offset-body"></tbody></table></div><p id="unknown-phase"></p></section>
           <section class="panel breakdown"><details><summary data-i18n="method">How the calculation works</summary><div id="build-breakdown"></div><div id="method">
@@ -2562,7 +2562,6 @@ globalThis.SlotLevelPlan = (() => {
     fpsSweepHelp: "Кожна точка показує максимум базових влучань за бойову секунду за цього FPS із вибраними зсувом і модифікаторами. У таблиці наведено всі діапазони цілих FPS, де частота нижча за найвище значення на графіку.",
     inspectFps: "Переглянути FPS",
     fpsDips: "Просідання за FPS",
-    fpsPrior: "Пік влучань/с",
     fpsLow: "Мінімум влучань/с",
     averageFps: "Середній FPS",
     fpsHelp: "Введи середній FPS під час бою (30–1000). Розрахунок передбачає рівномірні інтервали між кадрами.",
@@ -4023,6 +4022,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed","#calc","Removed the repeated peak hit rate from the FPS dips table.","З таблиці просідань за FPS прибрано колонку, у якій повторювався пік влучань/с."],
     ["2026-11-25","added","#calc","Compare maximum hits/s at each FPS and see the exact ranges where the rate dips.","Додано графік максимальних влучань/с за кожного FPS і таблицю діапазонів просідання."],
     ["2026-11-25","added","#calc","Set your average combat FPS to compare hit rates, hard caps and level checkpoints in the calculator and All units.","Введи середній FPS у бою, щоб порівняти частоту влучань, хардкапи й контрольні рівні в калькуляторі та таблиці юнітів."],
     ["2026-11-25","changed","#roster","Shortened the tooltip for shared calculator settings.","Скорочено підказку про спільні налаштування калькулятора."],
@@ -4426,7 +4426,7 @@ globalThis.SlotUpdates=(()=>{
     for (let hz=30;hz<=end;hz++) {
       const hits=fpsSamples[hz];
       if (hits<peak-1e-9) {
-        if (!band) {band={start:hz,end:hz,peak,min:hits};bands.push(band);}
+        if (!band) {band={start:hz,end:hz,min:hits};bands.push(band);}
         band.end=hz;
         band.min=Math.min(band.min,hits);
       } else {
@@ -4446,7 +4446,6 @@ globalThis.SlotUpdates=(()=>{
     for (const b of bands) {
       const row=body.insertRow();
       row.insertCell().textContent=b.start===b.end?String(b.start):b.start+"–"+b.end;
-      row.insertCell().textContent=num(b.peak,3);
       row.insertCell().textContent=num(b.min,3);
     }
     inspectFps(inspectedFps);
