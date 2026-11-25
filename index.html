@@ -718,6 +718,9 @@ tbody tr.selected {
   font-size:.89rem;
 }
 
+.build-share {display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;margin:.6rem 0}
+.build-share a {text-decoration:none}
+.build-share input {width:100%}
 .roster-settings {
   display:flex;
   flex-wrap:wrap;
@@ -1204,6 +1207,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
       <div class="layout">
         <aside class="controls">
           <section class="panel build"><div class="panel-heading"><h2 data-i18n="build">Unit and build</h2><button class="text-btn" id="reset" type="button" data-i18n="reset">Reset</button></div>
+            <div class="build-share"><a id="share-build" class="roster-reset" data-i18n="shareBuild">Share build</a><small id="share-status" role="status"></small><input id="share-url" type="url" readonly hidden aria-label="Build link" data-i18n-aria="buildLink"></div>
             <div class="field"><label for="unit" data-i18n="tierUnit">Tier 3 unit</label><div class="unit-picker"><img id="picker-portrait" class="game-art" alt=""><select id="unit"></select></div></div>
             <div class="field"><label for="level" data-i18n="currentLevel">Current Absorb level</label><input id="level" type="number" min="1" step="1" value="1000" inputmode="numeric"></div>
             <div class="field offset"><div class="field-title"><label for="phase" data-i18n="offset">Animation offset</label><output for="phase" id="phase-value">0.060 s</output></div>
@@ -2563,6 +2567,8 @@ globalThis.SlotLevelPlan = (() => {
     inspectFps: "Переглянути FPS",
     fpsPeaks: "Піки за FPS",
     fpsPeakRate: "Пік влучань/с",
+    shareBuild: "Поділитися білдом",
+    buildLink: "Посилання на білд",
     averageFps: "Середній FPS",
     fpsHelp: "Введи середній FPS під час бою (30–1000). Розрахунок передбачає рівномірні інтервали між кадрами.",
     endOffset: "0,12 с",
@@ -4022,6 +4028,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","added","#calc","Share build copies a link to your unit, level, FPS, animation offset and modifier settings.","Кнопка «Поділитися білдом» копіює посилання на вибраного юніта з його рівнем, FPS, зсувом анімації та налаштуваннями модифікаторів."],
     ["2026-11-25","changed","#calc","FPS peaks now lists each local maximum and the FPS values that reach it.","Таблиця піків показує кожен локальний максимум влучань/с і значення FPS, за яких його досягнуто."],
     ["2026-11-25","changed","#calc","Removed the repeated peak hit rate from the FPS dips table.","З таблиці просідань за FPS прибрано колонку, у якій повторювався пік влучань/с."],
     ["2026-11-25","added","#calc","Compare maximum hits/s at each FPS and see the exact ranges where the rate dips.","Додано графік максимальних влучань/с за кожного FPS і таблицю діапазонів просідання."],
@@ -4136,6 +4143,50 @@ globalThis.SlotUpdates=(()=>{
       }
     } catch { /* Storage can be unavailable when opened directly from disk. */ }
     return fresh;
+  }
+  function buildLink() {
+    const p=new URLSearchParams({v:"1",unit:activeUnit.id,lv:level,fps,ms:Math.round(phase*1000)});
+    for (const def of mods.schema) {
+      const chosen=state[def.id];
+      if (chosen.on) p.append("on",def.id);
+      for (const input of def.inputs) {
+        if (chosen[input.key]!==input.default) p.set(def.id+"."+input.key,chosen[input.key]);
+      }
+    }
+    return "https://xzetiks.github.io/slotbound-classified/#calc?"+p;
+  }
+  function sharedBuild(p) {
+    const id=p.get("unit"), level=Number(p.get("lv")), fps=Number(p.get("fps")), phase=Number(p.get("ms"));
+    if (p.get("v")!=="1" || !units.some(u=>u.id===id) ||
+        !Number.isSafeInteger(level) || level<1 || !Number.isFinite(fps) || fps<30 || fps>1000 ||
+        !p.has("ms") || !Number.isInteger(phase) || phase<0 || phase>120) return null;
+    const build={id,level,fps,phase,mods:mods.defaults()};
+    const enabled=new Set(p.getAll("on"));
+    for (const def of mods.schema) {
+      const chosen=build.mods[def.id];
+      chosen.on=enabled.has(def.id);
+      for (const input of def.inputs) {
+        const raw=p.get(def.id+"."+input.key);
+        if (raw!==null && input.options.some(([v])=>v===Number(raw))) chosen[input.key]=Number(raw);
+      }
+    }
+    return build;
+  }
+  async function copyBuildLink(event) {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    const href=el("share-build").href;
+    try {
+      await navigator.clipboard.writeText(href);
+      el("share-status").textContent=lang==="uk"?"Посилання скопійовано":"Link copied";
+    } catch {
+      const field=el("share-url");
+      field.value=href;
+      field.hidden=false;
+      field.focus();
+      field.select();
+      el("share-status").textContent=lang==="uk"?"Скопіюй виділене посилання":"Copy the selected link";
+    }
   }
   function remember() {
     try {localStorage.setItem(storageKey, JSON.stringify({id:activeUnit.id, phase:Math.round(phase*1000), fps, level, mods:state}));} catch {}
@@ -4306,6 +4357,9 @@ globalThis.SlotUpdates=(()=>{
     return msg("unknownOffset",{value:common.map(bandLabel).join(" / "),level:lv===null?"":" (Absorb LV "+num(lv,0)+")"});
   }
   function paintCalc() {
+    el("share-build").href=buildLink();
+    el("share-status").textContent="";
+    el("share-url").hidden=true;
     const u = activeUnit;
     const evaluation = mods.evaluate(u,state,lang);
     const options = timingOptions(evaluation);
@@ -4621,7 +4675,14 @@ globalThis.SlotUpdates=(()=>{
     if (guide) SlotGuide.render(lang);
     else if (roster) paintRoster();
     else {
-      const requested=new URLSearchParams(location.hash.split("?")[1]).get("unit");
+      const params=new URLSearchParams(location.hash.split("?")[1]);
+      const shared=location.hash.startsWith("#calc?") && sharedBuild(params);
+      if (shared) {
+        selectBuild(shared);
+        refresh(true);
+        return;
+      }
+      const requested=params.get("unit");
       if(requested && requested!==activeUnit.id && units.some(u=>u.id===requested)) setUnit(requested);
       else paintCalc();
     }
@@ -4787,6 +4848,7 @@ globalThis.SlotUpdates=(()=>{
       for (const modifier of Object.values(state)) modifier.on = false;
       refresh(true);
     });
+    el("share-build").addEventListener("click",copyBuildLink);
     bindColumnTips();
     el("search").addEventListener("input",paintRoster);
     el("class-filter").addEventListener("change",paintRoster);
