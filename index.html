@@ -3028,7 +3028,7 @@ globalThis.SlotGuideCombat = [
   const stones = ["Fate Stone","Камінь долі"];
   const endless = ["Endless rules","Правила Endless"];
   const navigation = {
-    "economy-paid-spins":["progression",rules,["up-lastspin","co-11","co-16","economy-tactical-interest"]],
+    "economy-paid-spins":["progression",rules,["machines","up-lastspin","co-11","co-16","economy-tactical-interest"]],
     "economy-tactical-interest":["progression",rules,["up-interest","economy-paid-spins"]],
     "economy-item-shop":["equipment",shop,["up-shopreroll","up-shopdiscount","it-01","it-54"]],
     "economy-special-stone":["equipment",stones,["stone-specialstone","up-stonespecial","economy-prism-stones","economy-fate-door"]],
@@ -3273,10 +3273,10 @@ globalThis.SlotGuideRules=(()=>{
     "On the third spin, Greedy Tail has first priority if eligible. The usual loss checks then try Twisted Bell, Lucky Nail, Copycap, Twin Cherries and Magic Lamp in that order. The first eligible correction acts. When Twisted Bell rerolls, the game checks the new board again.",
     "На третьому обертанні Greedy Tail має пріоритет, якщо виконано його умови. Далі гра по черзі перевіряє Twisted Bell, Lucky Nail, Copycap, Twin Cherries і Magic Lamp. Спрацьовує перше придатне ядро. Якщо Twisted Bell перекручує барабани, гра знову перевіряє комбінацію, що випала.",
     "cores.lua loss-correction handler · native registration order · 1.0.3",[],["core-pool","co-09","co-01","co-06"]);
-  add("machines","equipment","Nudge and Blast","Машини Nudge та Blast",
-    "Nudge moves one reel down by one cell and brings in a new symbol at the top. Blast removes all instances of one symbol appearing at least twice, drops the survivors and refills the empty cells.",
-    "Nudge опускає один барабан на одну клітинку й додає новий символ згори. Blast прибирає всі копії одного символу, який зустрічається щонайменше двічі, опускає решту й заповнює порожні клітинки.",
-    "machines.planNudge / planBlast / blastableSymbols · slot.new · 1.0.3",[],["core-pool","core-priority"]);
+  add("machines","equipment","Which machine controls lock after a jackpot?","Що блокується в автоматі після джекпоту?",
+    "Once the machine confirms a jackpot, you can no longer change that board with Nudge or Blast. Crooked Fang’s swap and Trickster Cube’s rotation are also unavailable. The lock applies to the current spin’s result.",
+    "Щойно автомат зарахує джекпот, змінити цю комбінацію за допомогою Nudge або Blast уже неможливо. Crooked Fang також не дасть поміняти символи місцями, а Trickster Cube — повернути їх. Блокування діє на результат поточного оберту.",
+    "slot.hasJackpotResult / nudgeColumn / startBlast / canRotateTricksterCube · main.lua Crooked Fang guard · 1.0.4",[],["economy-paid-spins"]);
   add("bug-rockfall","equipment","How long Rockfall delays an enemy","На скільки Rockfall затримує ворога",
     "Rockfall holds selected ordinary enemies out of the opening wave for 2 seconds. Bosses enter on schedule. The item level determines how many enemies it delays.",
     "Rockfall затримує появу вибраних звичайних ворогів на початку хвилі на 2 с. Боси з’являються вчасно. Від рівня предмета залежить кількість затриманих ворогів.",
@@ -3310,7 +3310,7 @@ globalThis.SlotHandbook=(()=>{
     "buildup-speed":"imprints","poison-relay":"items","soul-state":"imprints","echo-filters":"units",
     "absorb-yield":"progression","absorb-growth":"progression","rarity-roll":"progression",
     "awake-draw":"awakenings","faction-count":"units","core-favorite":"cores","pack-pool":"items",
-    "core-priority":"cores"
+    "core-priority":"cores","machines":"progression"
   };
   const entries=[
     ...SlotHiddenCooldowns,...SlotGuideHits,...SlotGuideCombat,...SlotGuideSummons,...SlotHiddenCatalog,
@@ -3966,6 +3966,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","added","#guide?id=machines","Added the machine controls that lock after a jackpot.","Додано пояснення, які дії з автоматом блокує джекпот."],
     ["2026-11-25","changed","#roster","Unit table column explanations now appear in compact tooltips with wrapped text.","Пояснення колонок у таблиці юнітів тепер з’являються в компактних підказках із переносом тексту."],
     ["2026-11-25","changed","#calc","Restored class groups in the unit picker. Within each class, units are sorted by rarity, then by name.","У списку вибору юніта повернуто групи за класами. У кожному класі юніти відсортовані за рідкістю, а за однакової рідкості — за назвою."],
     ["2026-11-25","changed","#calc","The calculator picker groups units by rarity and sorts each group alphabetically. Long selections now fit on one line.","У списку калькулятора юніти згруповані за рідкістю, а в кожній групі — за абеткою. Довгі назви в полі вибору тепер скорочуються до одного рядка."],
