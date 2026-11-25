@@ -1066,7 +1066,9 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
 .update-kind {color:var(--gold)}
 .update-history {padding:clamp(1rem,3vw,2rem);max-width:58rem}
 .update-history h2 {font-size:1.15rem;margin:0 0 .65rem}
-.update-history h3 {font-size:.92rem;color:var(--mint);margin:.8rem 0 .3rem}
+.update-tabs {display:flex;flex-wrap:wrap;gap:.35rem;border-bottom:1px solid var(--line);margin-bottom:1.25rem}
+.update-tabs button {background:transparent;color:var(--muted);font:inherit;font-weight:600;border:0;border-bottom:2px solid transparent;padding:.5rem .55rem;cursor:pointer}
+.update-tabs button[aria-selected="true"] {color:var(--gold);border-bottom-color:currentColor}
 .update-history ul {list-style:none;padding:0;margin:0 0 1.7rem}
 .update-history ul:last-child {margin-bottom:0}
 .update-history li {display:grid;grid-template-columns:5rem 1fr;gap:.6rem;border-top:1px solid var(--line);padding:.7rem 0}
@@ -4067,6 +4069,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","design","changed","#updates","The update history now has separate Mechanics, Design and Calculator tabs.","В історії оновлень з’явилися окремі вкладки «Механіки», «Дизайн» і «Калькулятор»."],
     ["2026-11-25","mechanics","changed","#guide?id=speed-ticks","Replaced the 1,200 ASPD example in the FPS bug report with High Elf and Seraph at attainable speeds.","У статті про баг FPS замінено приклад із 1 200 ASPD на High Elf і Seraph із досяжною швидкістю атаки."],
     ["2026-11-25","design","changed","#updates","Site updates are now grouped by topic within each date.","Оновлення за кожну дату тепер згруповано за темами."],
     ["2026-11-25","mechanics","changed","#guide?id=speed-ticks","Added low-FPS hit rates for fast and slow builds to the FPS bug report.","У звіті про баг FPS додано порівняння швидкого й повільного білдів за низької частоти кадрів."],
@@ -4105,27 +4108,51 @@ globalThis.SlotUpdates=(()=>{
     ["2026-11-24","calculator","changed","#roster","Updated attack caps and hidden mechanics for Slotbound 1.0.4.","Оновлено капи швидкості атаки й приховані механіки для Slotbound 1.0.4."]
   ];
   const labels={added:["Added","Додано"],changed:["Changed","Змінено"],removed:["Removed","Вилучено"]};
-  const topics={mechanics:["Mechanics","Механіки"],calculator:["Calculator","Калькулятор"],design:["Design","Дизайн"]};
+  const topics={mechanics:["Mechanics","Механіки"],design:["Design","Дизайн"],calculator:["Calculator","Калькулятор"]};
+  let selected="mechanics";
   function render(lang){
     const uk=lang==="uk", list=document.getElementById("update-history");
-    list.replaceChildren();
+    const tabs=document.createElement("div");
+    tabs.className="update-tabs";
+    tabs.setAttribute("role","tablist");
+    tabs.setAttribute("aria-label",uk?"Категорії оновлень":"Update categories");
+    list.replaceChildren(tabs);
+    const panels=new Map();
+    function select(topic){
+      selected=topic;
+      for(const [key,{button,panel}] of panels){
+        const active=key===topic;
+        button.setAttribute("aria-selected",String(active));
+        button.tabIndex=active?0:-1;
+        panel.hidden=!active;
+      }
+    }
+    for(const [topic,names] of Object.entries(topics)){
+      const button=document.createElement("button"),panel=document.createElement("section");
+      button.type="button";button.textContent=names[uk?1:0];button.id="updates-tab-"+topic;
+      panel.id="updates-panel-"+topic;
+      button.setAttribute("role","tab");button.setAttribute("aria-controls",panel.id);
+      panel.setAttribute("role","tabpanel");panel.setAttribute("aria-labelledby",button.id);panel.tabIndex=0;
+      button.onclick=()=>select(topic);
+      button.onkeydown=event=>{
+        const keys=Object.keys(topics),index=keys.indexOf(topic);
+        const next={ArrowRight:(index+1)%keys.length,ArrowLeft:(index+keys.length-1)%keys.length,Home:0,End:keys.length-1}[event.key];
+        if(next===undefined)return;
+        event.preventDefault();select(keys[next]);panels.get(keys[next]).button.focus();
+      };
+      panels.set(topic,{button,panel});tabs.append(button);list.append(panel);
+    }
+    select(selected);
     const dateFormat=new Intl.DateTimeFormat(uk?"uk-UA":"en-GB",{dateStyle:"long",timeZone:"UTC"});
-    let day,groups;
     for(const [date,topic,kind,href,en,ua] of changes){
-      if(day!==date){
-        day=date;
-        const heading=document.createElement("h2"), time=document.createElement("time");
+      const group=panels.get(topic);
+      if(group.day!==date){
+        group.day=date;
+        const heading=document.createElement("h2"),time=document.createElement("time");
         time.dateTime=date;time.textContent=dateFormat.format(new Date(date+"T00:00:00Z"));
-        heading.append(time);list.append(heading);
-        groups=new Map();
+        group.items=document.createElement("ul");heading.append(time);group.panel.append(heading,group.items);
       }
-      if(!groups.has(topic)){
-        const heading=document.createElement("h3"), items=document.createElement("ul");
-        heading.textContent=topics[topic][uk?1:0];
-        list.append(heading,items);
-        groups.set(topic,items);
-      }
-      const items=groups.get(topic);
+      const items=group.items;
       const li=document.createElement("li"), label=document.createElement("strong");
       label.textContent=labels[kind][uk?1:0];label.className="update-kind";
       const item=document.createElement(href?"a":"span");
