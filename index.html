@@ -3401,18 +3401,53 @@ globalThis.SlotHandbook=(()=>{
       tags:[entity.tags,detail.tags,...entity.title,...detail.title].filter(Boolean).join(" "),
       links:[...new Set([...(entity.links||[]),...(detail.links||[])])]};
   });
-  // Cross-list articles whose subject belongs to several sections. Each keeps one ID.
-  const alsoListedIn={
-    "it-54":["summons"], "decoy-dummy":["items"], "tower-camel":["items"],
-    "im-overlord":["summons"], "im-shadow_clone":["summons"], "im-colossus_descent":["summons"],
-    "sk-flame_call":["units"], "sk-flame_descent":["units"], "boar-bear":["units","imprints"],
-    "lich-undead":["units"], "lich-lord-legion":["units"], "im-earthquake":["summons"],
-    "tr-26":["items","factions"], "it-23":["imprints"], "pierce-stacking":["awakenings"],
-    "defence":["items"], "echo-filters":["items"], "area-basic-imprints":["units"],
-    "economy-paid-spins":["cores"], "it-45":["factions"]
+  // Additional listings are curated by topic. A mention, a donor or an example
+  // unit alone does not give an article another section.
+  const additionalListings={
+    units:[
+      "area-basic-imprints", "boar-bear", "lich-undead", "lich-lord-legion",
+      "sk-flame_call", "sk-flame_descent", "tr-29", "it-52", "absorb-growth",
+      // These awakenings explain targeting, damage or timing of a specific unit's skill.
+      "aw-A11", "aw-A16", "aw-A17", "aw-A18", "aw-A20", "aw-A21", "aw-A22", "aw-A23", "aw-A25", "aw-A26",
+      "aw-D13", "aw-D14", "aw-D23", "aw-D25", "aw-D27",
+      "aw-H12", "aw-H14", "aw-H16", "aw-H18", "aw-H19", "aw-H20", "aw-H21", "aw-H22", "aw-H23", "aw-H26", "aw-H27",
+      "aw-J09", "aw-J11", "aw-J12", "aw-J14", "aw-M10", "aw-M11", "aw-M13", "aw-M26", "aw-M29",
+      "aw-M31", "aw-M32", "aw-M33", "aw-M34", "aw-S13", "aw-S19", "aw-S20", "aw-S21", "aw-S22", "aw-S23",
+      "aw-W13", "aw-W19", "aw-W20", "aw-W21", "aw-W22", "aw-W23", "aw-W24", "aw-W25", "aw-W26", "aw-W28", "aw-W29"
+    ],
+    imprints:[
+      "raven-arrows", "boar-bear", "summoner-death", "it-23", "it-38", "absorb-yield",
+      "tr-06", "tr-27", "aw-S06", "aw-W05", "aw-A13", "fa-tribe"
+    ],
+    summons:[
+      "it-54", "im-overlord", "im-shadow_clone", "im-colossus_descent", "im-earthquake",
+      "im-overdrive", "im-revival", "im-self_destruct", "im-majesty", "im-undying_soul", "im-soul_split",
+      "it-38", "tr-31", "fa-forest", "fa-holy", "aw-A05", "aw-M19", "aw-M20", "aw-M22",
+      "aw-M23", "aw-M24", "aw-M27", "aw-M28", "aw-M35", "aw-M36"
+    ],
+    items:[
+      "decoy-dummy", "tower-camel", "tr-26", "defence", "echo-filters", "fa-engineer",
+      "tr-24", "im-lifesteal", "aw-M14", "aw-S14", "aw-W05"
+    ],
+    factions:["tr-26", "it-45", "it-14", "im-relentless", "tr-06"],
+    traits:["defence", "im-relentless", "co-10"],
+    awakenings:["pierce-stacking", "sk-flame_descent", "im-shrink"],
+    combat:[
+      "secondary-hit-imprints", "im-brace", "im-volley", "im-block", "tr-28",
+      "it-06", "it-68", "aw-A09", "aw-D06", "aw-D12", "aw-S18", "aw-S23", "aw-W06"
+    ],
+    progression:[
+      "trait-grade-limits", "awake-draw", "co-05", "co-16", "co-23", "core-favorite", "core-priority",
+      "im-poison", "it-08", "it-45"
+    ],
+    cores:["economy-paid-spins", "rarity-roll", "machines"]
   };
   function sectionsFor(entry){
-    return [entry.section||"units",...(alsoListedIn[entry.id]||[])];
+    const topics=[entry.section||"units"];
+    for(const [section,ids] of Object.entries(additionalListings)){
+      if(ids.includes(entry.id))topics.push(section);
+    }
+    return topics;
   }
   const byId=new Map(entries.map(e=>[e.id,e]));
   const byUnit=new Map(SlotEntities.filter(e=>e.unitId).map(e=>[e.id,e]));
@@ -4084,6 +4119,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","design","changed","#guide","Shared mechanics are now listed under more of their topics. Find Bounty under Summons, Shared Healing under Items, and imprint conversion under Imprints.","Розширено розподіл спільних механік. Bounty тепер можна знайти серед призваних істот, Shared Healing — серед предметів, а конвертацію відбитків — у розділі відбитків."],
     ["2026-11-26","design","changed","#guide","Added Factions and Combat mechanics. Shared topics such as item summons now appear in each relevant section.","Додано розділи «Фракції» та «Механіки бою». Спільні теми, як-от призвані предметами істоти, тепер доступні в кожному відповідному розділі."],
     ["2026-11-26","mechanics","changed","#guide?id=decoy-dummy","An Overlord follower can set Decoy Dummy’s HP. Guardian Golem excludes followers from both its HP and ATK.","Послідовник Overlord може визначати запас HP ляльки-приманки. Голем-охоронець пропускає послідовників під час розрахунку і HP, і ATK."],
     ["2026-11-26","mechanics","changed","#guide","Moved hit triggers and cooldowns to Imprints, Raven’s two arrows and attack speed to Units, and damage reduction to Items.","Статті про спрацювання й перезарядки перенесено до відбитків, про дві стріли Raven та швидкість атаки — до юнітів, а про зниження шкоди — до предметів."],
