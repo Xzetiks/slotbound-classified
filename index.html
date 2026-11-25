@@ -27,7 +27,7 @@
 
 body {
   margin:0;
-  background:radial-gradient(ellipse 70% 460px at 30% -160px,#30362d,transparent),var(--bg);
+  background:radial-gradient(ellipse 70% 460px at 30% -160px,#30362d,transparent) no-repeat,var(--bg);
   color:var(--ink);
 }
 
@@ -3927,6 +3927,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-25","changed",null,"Fixed a background stripe below the footer on short pages.","Прибрано смугу іншого кольору під футером на коротких сторінках."],
     ["2026-11-25","added","#calc","XBlack and a dismantled nine-reel machine now flank the page on wide screens.","На широких екранах ліворуч від сторінки тепер стоїть XBlack, а праворуч лежать розібраний автомат і дев’ять барабанів."],
     ["2026-11-25","changed","#guide?id=area-basic-imprints","Shortened the area-attack guide to the imprints that fail on basic hits and the exceptions for each group of units.","У статті про базові атаки по площі залишено відбитки, які не спрацьовують, і додаткові обмеження для кожної групи юнітів."],
     ["2026-11-25","changed","#guide?id=area-basic-imprints","Grouped all ten area attackers by skill and added the first-target rule for extended spears.","У таблиці згруповано всіх десятьох юнітів за типом уміння й додано правило першої цілі для подовженого списа."],
