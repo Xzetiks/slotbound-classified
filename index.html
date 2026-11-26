@@ -3614,6 +3614,7 @@ globalThis.SlotDpsPanel = (() => {
     return parts.join(" ");
   }
   let showChanges=false;
+  const expandedSources=new Set(),expandedModifiers=new Set();
   function breakdown(unit,level,fps,offset,build,result,text,fmt){
     const section=node("section",undefined,"dps-breakdown"),buttons=node("div",undefined,"dps-switch"),body=node("div");
     section.append(node("h3",text("DPS breakdown","Розподіл DPS")),buttons,body);
@@ -3624,6 +3625,7 @@ globalThis.SlotDpsPanel = (() => {
     const visible=v=>v===null || Math.abs(v)>=.5;
     const tables=new Map();
     function paint(){
+      const expanded=showChanges?expandedModifiers:expandedSources;
       body.replaceChildren();
       for(const button of buttons.children) button.setAttribute("aria-pressed",String((button===buttons.lastChild)===showChanges));
       const count=build.targets||1;
@@ -3660,10 +3662,9 @@ globalThis.SlotDpsPanel = (() => {
           label.replaceChildren(trigger);
           trigger.type="button";trigger.setAttribute("aria-expanded","false");
           let children=[];
-          trigger.onclick=()=>{
-            const open=trigger.getAttribute("aria-expanded")==="true";
-            trigger.setAttribute("aria-expanded",String(!open));
-            if(open){children.forEach(tr=>tr.remove());children=[];return;}
+          function renderDetails(open){
+            trigger.setAttribute("aria-expanded",String(open));
+            if(!open){children.forEach(tr=>tr.remove());children=[];return;}
             let detail;
             if(showChanges) detail=changes.grouped[name];
             else if(result.parts[key]) detail=result.parts[key].map(([n,val])=>[n,val*count]);
@@ -3683,7 +3684,13 @@ globalThis.SlotDpsPanel = (() => {
               cell.colSpan=count>1?3:2;cell.textContent=text("Breakdown unavailable.","Розподіл недоступний.");
               row.after(tr);children.push(tr);
             }
+          }
+          trigger.onclick=()=>{
+            const open=!expanded.has(key);
+            if(open) expanded.add(key); else expanded.delete(key);
+            renderDetails(open);
           };
+          if(expanded.has(key)) renderDetails(true);
         }
         if(v!==null){
           const bar=node("span",undefined,"dps-bar"+(v<0?" negative":""));
@@ -5478,6 +5485,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#calc","Expanded damage sources and modifiers stay open and update their DPS as you edit the build.","Розгорнуті джерела та модифікатори шкоди залишаються відкритими й показують оновлений DPS під час редагування білда."],
     ["2026-11-26","design","removed","#roster","Removed the unit counter from the All units table.","З таблиці «Усі юніти» прибрано лічильник юнітів."],
     ["2026-11-26","design","changed","#roster","Name search is on the left. Compact comparison and class filters sit beside the unit count.","Пошук за назвою тепер ліворуч. Компактні поля порівняння та класу розташовано поруч із кількістю юнітів."],
     ["2026-11-26","calculator","changed","#roster","All units opens in alphabetical order again. Click a column heading to rank the full list by that stat.","У таблиці «Усі юніти» відновлено початковий порядок за назвою. Натисни заголовок колонки, щоб відсортувати весь список за відповідною характеристикою."],
