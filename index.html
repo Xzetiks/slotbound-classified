@@ -2736,7 +2736,7 @@ globalThis.SlotDps = (() => {
     A14:[8,12,16],A15:[15,20,25],S06:[10,15,20],S12:[8,12,16],W14:[15,20,25],S14:[5,10,15],S15:[40,60,80],S13:[25,35,45]};
   function awakeningPlan(unit,level,build){
     const picks=(build.awakenings||[]).slice(0,awakeningSlots(level));
-    const rank=Math.min(awakeningSlots(level),Math.max(picks.length,build.awakeRank||0));
+    const rank=picks.length;
     const value=(id,field)=>{
       if(!picks.includes(id)) return 0;
       const def=data.awakenings[id];
@@ -2768,10 +2768,7 @@ globalThis.SlotDps = (() => {
     if(out.factions?.undead && Number.isInteger(raw.deaths) && raw.deaths>0) out.deaths=Math.min(10,raw.deaths);
     if(Array.isArray(raw?.awakenings)){
       const picks=[...new Set(raw.awakenings.filter(id=>data.units[unit.id].awakenings.includes(id)))].slice(0,3);
-      if(picks.length){
-        out.awakenings=picks;
-        if(Number.isInteger(raw.awakeRank) && raw.awakeRank>picks.length) out.awakeRank=Math.min(3,raw.awakeRank);
-      }
+      if(picks.length) out.awakenings=picks;
     }
     if(Number.isInteger(raw?.targets) && raw.targets>=2 && raw.targets<=5) out.targets=raw.targets;
     return out;
@@ -3371,7 +3368,7 @@ globalThis.SlotDps = (() => {
     cache.set(full,own(result));
     function core(mask){
       if(cache.has(mask)) return cache.get(mask);
-      const b={...build,traits:[],imprints:[],items:[],awakenings:[],awakeRank:plan.rank,factions:{}};
+      const b={...build,traits:[],imprints:[],items:[],awakenings:[],factions:{}};
       components.forEach((part,i)=>{if(mask & (1<<i)) part.apply(b);});
       const value=own(calculate(unit,level,fps,offset,normalize(unit,b)));
       cache.set(mask,value);
@@ -3689,16 +3686,11 @@ globalThis.SlotDpsPanel = (() => {
         }));
     }
     if(capacity<3) awakeningBox.append(node("small",text("Next pick at Absorb LV ","Наступний вибір на рівні Absorb ")+[30,60,100][capacity]));
-    if(picks.length){
-      const label=node("label",text("Shared rank","Спільний ранг"),"field"), rank=node("select");
-      rank.dataset.focus="awakening-rank";
-      for(let n=picks.length;n<=capacity;n++) rank.add(new Option(roman[n],String(n)));
-      rank.value=String(plan.rank);
-      rank.onchange=()=>{onChange({...build,awakeRank:Number(rank.value)});panel.querySelector('[data-focus="awakening-rank"]').focus();};
-      label.append(rank);awakeningBox.append(label);
-      awakeningBox.append(node("small",text("Each pick raises all ranks. Raise the preview rank to compare a later pick without adding its other effects.",
-        "Кожен вибір підвищує ранг усіх пробуджень. Можна підняти ранг для порівняння, пропустивши ефекти інших виборів.")));
-    }
+    const rankGuide=node("a",picks.length
+      ?text("Shared rank ","Спільний ранг ")+roman[plan.rank]
+      :text("How awakening ranks work","Як зростає ранг пробуджень"));
+    rankGuide.href="#guide?id=awake-draw";
+    awakeningBox.append(rankGuide);
     controls.append(awakeningBox);
     const factionBox=node("fieldset");
     factionBox.append(node("legend",text("Faction bonuses","Бонуси фракцій")));
@@ -4544,9 +4536,9 @@ globalThis.SlotGuideRules=(()=>{
     [f("Rare","Rare","Threshold 20 counted spawns. Each step adds 2 percentage points, subject to a 40% ceiling.","Поріг — 20 зарахованих випадінь. Крок додає 2 відсоткові пункти, стеля — 40%."),
      f("Legendary","Legendary","The threshold is 80 counted spawns at research I, 70 at II and 60 at III. Each step adds 0.5 percentage points. A Rare result resets the Rare counter. Legendary and Prism reset both counters.","Поріг становить 80 зарахованих випадінь на I рівні дослідження, 70 на II та 60 на III. Кожен крок додає 0,5 відсоткового пункту. Випадіння Rare скидає лічильник Rare, а Legendary або Prism — обидва лічильники."),
      f("Joker’s Grin + Golden Lever","Joker’s Grin + Golden Lever","The game keeps the better of two rolls, then Golden Lever raises that result by one unlocked grade when it triggers. The two rolls count as one spawn outcome.","Гра бере кращий із двох кидків, а при спрацюванні Golden Lever підвищує результат на одну відкриту рідкість. Обидва кидки зараховуються як один результат.")],["co-23","co-29","tier-path"]);
-  add("awake-draw","effects","How awakening offers work","Як формуються пропозиції пробуджень",
-    "Passing on an awakening can put it in a separate pool for the next offer. If enough options remain, the game tries to offer two unseen awakenings and one you previously passed over.",
-    "Пропущене пробудження може потрапити в окремий пул для наступного вибору. Якщо кандидатів достатньо, гра намагається запропонувати два нові пробудження й одне з раніше пропущених.",
+  add("awake-draw","effects","How do awakening ranks and offers work?","Як зростає ранг пробуджень і що пропонує гра?",
+    "After Dormant Power research, a Tier 3 unit gets a pick at Absorb levels 30, 60 and 100. The first pick starts at rank I. Choosing the second raises both to II. Choosing the third raises all three to III. Reaching a milestone unlocks the choice. Making the pick raises the rank.\n\nPassing on an awakening can put it in a separate pool for the next offer. If enough options remain, the game tries to offer two unseen awakenings and one you previously passed over.",
+    "Після дослідження Dormant Power юніт T3 отримує по одному вибору на рівнях Absorb 30, 60 і 100. Перше вибране пробудження має ранг I. Коли вибираєш друге, обидва отримують II. Коли вибираєш третє, усі три отримують III. Рівень Absorb відкриває вибір, а ранг підвищується в момент вибору.\n\nПропущене пробудження може потрапити в окремий пул для наступного вибору. Якщо кандидатів достатньо, гра намагається запропонувати два нові пробудження й одне з раніше пропущених.",
     catalog+" · awakening.pool / capacity / normalize",
     [],["pierce-awakening"]);
   add("faction-count","units","What counts toward a faction bonus?","Що зараховується для бонусу фракції?",
@@ -5375,6 +5367,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#guide?id=awake-draw","Awakening rank now follows your active picks automatically. The awakening guide explains when all selected ranks increase.","Ранг пробуджень тепер залежить від кількості активних виборів. У довіднику пояснено, коли підвищується ранг усіх вибраних пробуджень."],
     ["2026-11-26","calculator","changed","#calc","Direct hits such as Transfer and Ruin appear only in Damage sources. Damage modifiers shows bonuses already included in the unit’s attacks, skills and summons.","Transfer, Ruin та інші джерела власних влучань показано лише в «Джерелах шкоди». «Модифікатори шкоди» показують бонуси, вже враховані в атаках, уміннях і призваних істотах."],
     ["2026-11-26","calculator","added","#calc","DPS breakdown shows each source’s group and per-target damage. DPS by effect credits each source’s hits and allocates changes in the unit’s own DPS among its bonuses.","Розподіл DPS показує шкоду кожного джерела по групі та в середньому по цілі. DPS за ефектами зараховує влучання їхнім джерелам і розподіляє приріст власного DPS юніта між бонусами."],
     ["2026-11-26","calculator","added","#calc","Choose awakenings from each Tier 3 unit’s own pool and compare basic and skill DPS at ranks I–III. Shared builds include the picks and preview rank.","Вибирайте пробудження з пулу конкретного юніта T3 та порівнюйте DPS базових атак і вміння на рангах I–III. Посилання на білд зберігає вибір і ранг."],
