@@ -749,9 +749,6 @@ tbody tr.selected {
   border-color:var(--gold);
   color:var(--gold);
 }
-.list-info b {
-  color:var(--ink);
-}
 
 .roster-table td:nth-child(2),.roster-table th:nth-child(2) {
   text-align:left;
@@ -1370,7 +1367,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
       <div class="intro"><h1 data-i18n="rosterHeading">All Tier 3 units</h1><p data-i18n="rosterIntro">Compare attack speed, damage per hit, or sustained DPS with your current settings. Select a unit to open its build.</p></div>
       <section class="panel roster-panel">
         <div class="field roster-search"><label for="search" data-i18n="search">Search by name</label><input id="search" type="search" placeholder="e.g. Eclipse" data-i18n-placeholder="example"></div>
-        <div class="list-info"><b id="list-count"></b>
+        <div class="list-info">
         <div class="field"><label for="roster-mode" data-i18n="compare">Compare</label><select id="roster-mode"><option value="speed" data-i18n="compareSpeed">Attack speed</option><option value="damage" data-i18n="compareDamage">Damage</option><option value="dps">DPS</option></select></div>
         <div class="field"><label for="class-filter" data-i18n="class">Class</label><select id="class-filter"></select></div>
         <div class="roster-settings"><span id="list-settings" tabindex="0" aria-describedby="rosterSettingsTip"></span><button type="button" class="roster-reset" id="roster-reset" data-i18n="reset">Reset</button></div></div>
@@ -4065,7 +4062,6 @@ globalThis.SlotCopy = {
     active:"Active · {count}",
     unknownOffset:"If the offset is unknown, {value} ASPD{level} reaches the Hard cap at all 121 slider positions.",
     baseStats:"This form has {base} base ASPD. At LV {level}, it reaches {speed} ASPD before modifiers. It can promote to T3 at LV {min}.",
-    count:"Units · {shown} / {total}",
     listSettings:"Offset {phase} · {fps} FPS · Modifiers selected: {count}",
     startsOnly:"Hit rate unverified",
     noResults:"No units match your search.",
@@ -4096,7 +4092,6 @@ globalThis.SlotCopy = {
     active:"Діють · {count}",
     unknownOffset:"Якщо зсув невідомий, {value} ASPD{level} вистачає для Hard cap на всіх 121 положеннях повзунка.",
     baseStats:"Базова ASPD форми — {base}. На LV {level} до модифікаторів — {speed}. Форма T3 доступна від LV {min}.",
-    count:"Юнітів · {shown} / {total}",
     listSettings:"Зсув {phase} · {fps} FPS · Увімкнено модифікаторів: {count}",
     startsOnly:"Темп влучань не перевірено",
     noResults:"Юнітів за цим запитом не знайдено.",
@@ -5483,6 +5478,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","design","removed","#roster","Removed the unit counter from the All units table.","З таблиці «Усі юніти» прибрано лічильник юнітів."],
     ["2026-11-26","design","changed","#roster","Name search is on the left. Compact comparison and class filters sit beside the unit count.","Пошук за назвою тепер ліворуч. Компактні поля порівняння та класу розташовано поруч із кількістю юнітів."],
     ["2026-11-26","calculator","changed","#roster","All units opens in alphabetical order again. Click a column heading to rank the full list by that stat.","У таблиці «Усі юніти» відновлено початковий порядок за назвою. Натисни заголовок колонки, щоб відсортувати весь список за відповідною характеристикою."],
     ["2026-11-26","calculator","changed","#roster","All units now opens grouped by class, with the rarest forms first. The DPS column shows available and required imprint slots when a build exceeds the limit. Burning Heart now boosts only the basic hit in a Volley sequence.","У таблиці «Усі юніти» форми згруповано за класом, від найрідкісніших у кожній групі. Якщо для білда бракує слотів відбитків, у колонці DPS видно доступну й потрібну кількість. Burning Heart тепер підсилює лише базовий удар у серії Volley."],
@@ -6287,7 +6283,6 @@ globalThis.SlotUpdates=(()=>{
       if (button.dataset.sort === sortColumn) header.setAttribute("aria-sort",sortAscending ? "ascending" : "descending");
       else header.removeAttribute("aria-sort");
     }
-    el("list-count").textContent = msg("count",{shown:rows.length,total:units.length});
     el("list-settings").textContent = msg("listSettings",{phase:phaseText(phase),fps:num(fps,2),count:Object.values(state).filter(s=>s.on).length});
     const body = el("roster-body");
     body.replaceChildren();
