@@ -3777,19 +3777,23 @@ globalThis.SlotDpsPanel = (() => {
     targetLabel.append(countChoice);
     const labels = {traits:text("Traits","Риси"),items:text("Items","Предмети"),imprints:text("Imprints","Відбитки")};
     const stages = [text("Recruitment","Найм"),text("First promotion","Перше підвищення"),text("Second promotion","Друге підвищення")];
-    for (const group of engine.groups) {
-      const count = build[group].filter(Boolean).length, max = engine.limit(unit,group);
-      const box = node("fieldset"), legend = node("legend",labels[group]+" · "+count+"/"+max);
+    function sectionLegend(group,label,count,max,firstSlot){
+      const legend=node("legend",label+" · "+count+"/"+max);
       const clear=node("button",text("Clear all","Очистити всі"),"gear-clear-all");
       clear.type="button";
       clear.disabled=count===0;
-      clear.setAttribute("aria-label",labels[group]+" · "+clear.textContent);
+      clear.setAttribute("aria-label",label+" · "+clear.textContent);
       clear.onclick=()=>{
         onChange({...build,[group]:[]});
-        panel.querySelector('[data-focus="'+group+'0"]')?.focus();
+        panel.querySelector('[data-focus="'+firstSlot+'"]')?.focus();
       };
       legend.append(clear);
-      box.append(legend);
+      return legend;
+    }
+    for (const group of engine.groups) {
+      const count = build[group].filter(Boolean).length, max = engine.limit(unit,group);
+      const box=node("fieldset");
+      box.append(sectionLegend(group,labels[group],count,max,group+"0"));
       // Keep a single empty inventory/imprint slot visible until it is filled.
       const shown = group === "traits" ? max : Math.min(max,build[group].length+1);
       for (let i = 0; i < shown; i++) {
@@ -3859,7 +3863,7 @@ globalThis.SlotDpsPanel = (() => {
     }
     const awakeningBox=node("fieldset"), plan=engine.awakeningPlan(unit,level,build);
     const capacity=engine.awakeningSlots(level), picks=plan.picks;
-    awakeningBox.append(node("legend",text("Awakenings","Пробудження")+" · "+picks.length+"/"+capacity));
+    awakeningBox.append(sectionLegend("awakenings",text("Awakenings","Пробудження"),picks.length,capacity,"awakening-0"));
     for(let i=0;i<Math.min(capacity,picks.length+1);i++){
       const key="awakening-"+i,choice=picks[i]||"";
       const options=SlotDpsData.units[unit.id].awakenings.filter(id=>id===choice || !picks.includes(id))
@@ -5546,6 +5550,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","added","#calc","Clear all awakenings in one click to see the same build’s DPS without them.","Усі пробудження можна зняти одним кліком і побачити DPS того самого білда без них."],
     ["2026-11-26","calculator","changed","#calc","Clear all items, imprints or traits in their own section with one click. Empty slot is no longer a menu option.","Предмети, відбитки або риси можна очистити одним кліком у відповідному розділі. Пункт «Вільний слот» прибрано з випадаючих списків."],
     ["2026-11-26","calculator","changed","#calc","Search units by part of a name while keeping class groups. Use × beside an equipped trait, imprint, item or awakening to clear its slot.","Шукайте юнітів за частиною назви зі збереженням груп за класами. Кнопка × біля вибраної риси, відбитка, предмета чи пробудження очищує слот."],
     ["2026-11-26","calculator","changed","#calc","Search traits, imprints, items and awakenings by any part of their name. Newly selected items and traits start at their maximum rank.","Риси, відбитки, предмети та пробудження можна шукати за частиною назви. Нові предмети й риси одразу отримують максимальний ранг."],
