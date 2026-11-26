@@ -3339,13 +3339,26 @@ globalThis.SlotDps = (() => {
     return {directGroup,attack,aspd,rate,hit:unit.canBasic===false || basicFactor===null ? null : meanHit*basicFactor,boostedHit,ordinaryHit:hit,basic,rotationBasic,rotationRate,skillDps,summonDps,rows,skills,total,estimatedTiming,groupDps:total===null?null:total*targets,
       basicColossus:!!imprints.colossus_descent,idealImprints,estimateBasis,unresolved:[...unresolved]};
   }
+  const directSources={
+    items:["24","25","52","54","70"],
+    imprints:["chain","transfer","pierce","earthquake","meteor","skyward_strike","colossus_descent","volley","ruin","soul_split","shadow_clone"]
+  };
+  function sourceRows(build,result){
+    const rows=new Map(result.rows);
+    for(const [group,ids] of Object.entries(directSources)) for(const pair of build[group]){
+      if(!pair || !ids.includes(pair[0])) continue;
+      const name=catalogs[group][pair[0]].name;
+      if(!rows.has(name)) rows.set(name,result.total===null?null:0);
+    }
+    return [...rows];
+  }
   // Credit independent damage events to the source that delivered them. Divide changes
   // to the unit's own rotation across balanced orders of adding the equipped effects.
   function effectContributions(unit,level,fps,offset,build,result){
     const components=[],targets=build.targets||1,plan=awakeningPlan(unit,level,build);
     for(const group of groups) build[group].forEach((pair,i)=>{
       if(pair) components.push({key:group+pair[0],name:catalogs[group][pair[0]].name,
-        direct:group!=="traits",apply:b=>{b[group][i]=pair;}});
+        direct:directSources[group]?.includes(pair[0]),apply:b=>{b[group][i]=pair;}});
     });
     for(const id of plan.picks) components.push({key:"awakening"+id,name:data.awakenings[id].name,
       apply:b=>b.awakenings.push(id)});
@@ -3395,13 +3408,15 @@ globalThis.SlotDps = (() => {
         accumulate(order);accumulate(order.reverse());
       }
     }
-    const rows=components.map((part,i)=>{
-      const direct=part.direct?result.rows.filter(([name])=>name===part.name).reduce((sum,[,v])=>sum+v*targets,0):0;
-      return [part.name,incomplete || !paths?null:direct+credit[i]/paths];
+    const bonuses=[],rows=components.map((part,i)=>{
+      const hits=part.direct && result.rows.find(([name])=>name===part.name);
+      const gain=incomplete || !paths?null:credit[i]/paths;
+      if(!part.direct) bonuses.push([part.name,gain,part.key.startsWith("awakening")]);
+      return [part.name,gain===null?null:(hits?hits[1]*targets:0)+gain];
     });
-    return {base,rows};
+    return {base,rows,bonuses};
   }
-  return {groups,effectContributions,awakeningSlots,awakeningPlan,factionBonuses,conditions,catalogs,limit,maximum,available,normalize,calculate,fromSpeed,toSpeed};
+  return {groups,sourceRows,effectContributions,awakeningSlots,awakeningPlan,factionBonuses,conditions,catalogs,limit,maximum,available,normalize,calculate,fromSpeed,toSpeed};
 })();
 
 </script>
@@ -3552,17 +3567,17 @@ globalThis.SlotDpsPanel = (() => {
       let rows;
       if(showChanges){
         changes??=engine.effectContributions(unit,level,fps,offset,build,result);
-        rows=[[text("Unit before build effects","Юніт до бонусів білда"),changes.base],...changes.rows];
-        body.append(node("small",text("Each effect gets its own hits. Changes to basic, skill and summon DPS are shared by averaging the order bonuses are added. This estimate adds up to group DPS.",
-          "Шкода влучань належить ефекту, який їх завдав. Зміни DPS базових атак, уміння й призваних істот розподілено за середнім приростом у різних порядках додавання бонусів. Сума дає DPS групи.")));
+        rows=changes.bonuses.map(([name,value,awake])=>[awake?name+text(" (awakening)"," (пробудження)"):name,value]);
+        body.append(node("small",text("These bonuses are already included in basic, skill and summon DPS. Gains shared by several bonuses are apportioned between them.",
+          "Ці бонуси вже враховані в DPS базових атак, уміння й призваних істот. Спільний приріст розподілено між бонусами.")));
       } else {
         rows=[[text("Basic attacks","Базові атаки"),result.rotationBasic],[text("Skill","Уміння"),result.skillDps],
-          ...(result.summonDps?[[text("Summons","Призвані істоти"),result.summonDps]]:[]),...result.rows]
+          ...(result.summonDps?[[text("Summons","Призвані істоти"),result.summonDps]]:[]),...engine.sourceRows(build,result)]
           .map(([name,value])=>[name,value===null?null:value*count]);
       }
-      if(!rows.length){body.append(node("small",text("Equip an effect to compare it.","Вибери ефект для порівняння.")));return;}
-      const table=node("table"),header=table.createTHead().insertRow(), signed=v=>fmt(v);
-      for(const title of [showChanges?text("Effect","Ефект"):text("Source","Джерело"),...(count>1?[text("Group DPS","DPS групи"),text("DPS/target","DPS/ціль")]:["DPS"])])
+      if(!rows.length){body.append(node("small",text("No separate damage modifiers in this build.","У цьому білді немає окремих модифікаторів шкоди.")));return;}
+      const table=node("table"),header=table.createTHead().insertRow(), signed=v=>(showChanges && v>0?"+":"")+fmt(v);
+      for(const title of [showChanges?text("Modifier","Модифікатор"):text("Source","Джерело"),...(count>1?[text("Group DPS","DPS групи"),text("DPS/target","DPS/ціль")]:["DPS"])])
         header.append(node("th",title));
       const tbody=table.createTBody(), max=Math.max(1,...rows.map(([,v])=>Math.abs(v||0)));
       for(const [name,v] of [...rows].sort((a,b)=>Math.abs(b[1]||0)-Math.abs(a[1]||0))){
@@ -3576,7 +3591,7 @@ globalThis.SlotDpsPanel = (() => {
       }
       body.append(table);
     }
-    for(const [i,title] of [text("Damage sources","Джерела шкоди"),text("DPS by effect","DPS за ефектами")].entries()){
+    for(const [i,title] of [text("Damage sources","Джерела шкоди"),text("Damage modifiers","Модифікатори шкоди")].entries()){
       const button=node("button",title);button.type="button";button.onclick=()=>{showChanges=i===1;paint();};buttons.append(button);
     }
     paint();return section;
@@ -5360,6 +5375,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#calc","Direct hits such as Transfer and Ruin appear only in Damage sources. Damage modifiers shows bonuses already included in the unit’s attacks, skills and summons.","Transfer, Ruin та інші джерела власних влучань показано лише в «Джерелах шкоди». «Модифікатори шкоди» показують бонуси, вже враховані в атаках, уміннях і призваних істотах."],
     ["2026-11-26","calculator","added","#calc","DPS breakdown shows each source’s group and per-target damage. DPS by effect credits each source’s hits and allocates changes in the unit’s own DPS among its bonuses.","Розподіл DPS показує шкоду кожного джерела по групі та в середньому по цілі. DPS за ефектами зараховує влучання їхнім джерелам і розподіляє приріст власного DPS юніта між бонусами."],
     ["2026-11-26","calculator","added","#calc","Choose awakenings from each Tier 3 unit’s own pool and compare basic and skill DPS at ranks I–III. Shared builds include the picks and preview rank.","Вибирайте пробудження з пулу конкретного юніта T3 та порівнюйте DPS базових атак і вміння на рангах I–III. Посилання на білд зберігає вибір і ранг."],
     ["2026-11-26","calculator","added","#calc","Set faction synergy tiers and combat conditions in Damage & DPS. Rear Guard and Solitude have wave toggles, and Finishing Blow shows whether its single-target bonus is active.","У розділі шкоди можна вибрати рівень синергії фракції та бойові умови. Rear Guard і Solitude отримали перемикачі хвилі, а Finishing Blow показує, чи діє бонус по останній цілі."],
