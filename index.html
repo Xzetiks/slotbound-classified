@@ -2816,8 +2816,8 @@ globalThis.SlotDps = (() => {
     let estimatedProcs=false;
     const imprint = id => data.imprints[id].levels[imprints[id]-1];
     // Full-health, stationary targets and a carrier taking no incoming damage.
-    const inertImprints = ["bash","blind","block","chill","enlarge","execute","fear","knockback","lifesteal","majesty","overdrive","overlord","revival","shrink","undying_soul","self_destruct"];
-    const modeled=["chain","transfer","pierce","relentless","earthquake","meteor","skyward_strike","poison","ruin","volley","shadow_clone"];
+    const inertImprints = ["timeless","bash","blind","block","chill","enlarge","execute","fear","knockback","lifesteal","majesty","overdrive","overlord","revival","shrink","undying_soul","self_destruct"];
+    const modeled=["colossus_descent","chain","transfer","pierce","relentless","earthquake","meteor","skyward_strike","poison","ruin","volley","shadow_clone"];
     for (const id of Object.keys(imprints)) {
       if (inertImprints.includes(id) || modeled.includes(id)) continue;
       if (id!=="brace" || (boostedHit===null && unit.canBasic!==false)) unresolved.add(data.imprints[id].name);
@@ -3108,6 +3108,10 @@ globalThis.SlotDps = (() => {
       }
       if(traits["05"]) unresolved.add(data.traits["05"].name);
     }
+    if(imprints.colossus_descent) {
+      const colossusAttack=Math.max(1,Math.floor(attack*imprint("colossus_descent").atkFrac));
+      rows.push([data.imprints.colossus_descent.name,colossusAttack/1.2/targets]);
+    }
     rows.push(...impactRows);
     if(imprints.volley) rows.push(["Volley",volleyRate*volleyHit/targets]);
     if(imprints.ruin) rows.push(["Ruin",ruinHit]);
@@ -3134,7 +3138,7 @@ globalThis.SlotDps = (() => {
     const total=rotationBasic===null || skillDps===null || unresolved.size ? null : rows.reduce((sum,row)=>sum+row[1],rotationBasic+skillDps+summonDps);
     return {attack,aspd,rate,hit:unit.canBasic===false || basicFactor===null ? null : meanHit*basicFactor,boostedHit,ordinaryHit:hit,basic,rotationBasic,rotationRate,skillDps,summonDps,rows,skills,total,estimatedTiming,groupDps:total===null?null:total*targets,
       poisonTick:imprints.poison ? rounded((build.targetHP||100000)*imprint("poison").maxHPFrac) : null,
-      idealImprints,estimateBasis,unresolved:[...unresolved]};
+      basicColossus:!!imprints.colossus_descent,idealImprints,estimateBasis,unresolved:[...unresolved]};
   }
   return {groups,catalogs,limit,maximum,available,normalize,calculate,fromSpeed,toSpeed};
 })();
@@ -3339,7 +3343,7 @@ globalThis.SlotDpsPanel = (() => {
     const stats = node("dl",undefined,"dps-numbers");
     const rateLabelForBuild=value=>rateLabel(value,result.estimatedTiming,lang,fmt);
     const stat = (label,value) => { const group=node("div"); group.append(node("dt",label),node("dd",value)); stats.append(group); };
-    const totalLabel=value=>rateLabel(value,result.estimatedTiming || result.idealImprints,lang,fmt);
+    const totalLabel=value=>rateLabel(value,result.estimatedTiming || result.idealImprints || result.basicColossus,lang,fmt);
     stat(text("Average DPS per target","Середній DPS на ціль"),totalLabel(result.total));
     if(targets>1) stat(text("Group DPS","DPS по групі"),totalLabel(result.groupDps));
     stat("ATK",fmt(result.attack));
@@ -3388,6 +3392,8 @@ globalThis.SlotDpsPanel = (() => {
     warning.hidden=!result.unresolved.length;
     const content=panel.querySelector(".dps-content");
     content.replaceChildren(targetLabel,stats,skills,warning);
+    if(result.basicColossus) content.append(node("small",text("Colossus DPS counts one basic hit every 1.2 s on one target. Its fifth-hit area strike is excluded.","DPS Колоса враховує одне базове влучання по одній цілі кожні 1,2 с. Удар по площі на п’ятій атаці пропущено.")));
+    if(build.imprints.some(pair=>pair?.[0]==="timeless")) content.append(node("small",text("Timeless is treated as crowd control. DPS uses the ordinary attack rotation.","Timeless враховано як контроль. Для DPS використано звичайний цикл атак.")));
     if(result.idealImprints) content.append(node("small",estimateNote("imprints",lang)));
     if(targets>1 && build.imprints.some(pair=>pair?.[0]==="chain")) content.append(node("small",text(
       "Each Chain bounce from this unit deals 4 damage. Higher ranks add bounces. Damage spread from a bounce is counted under Transfer.",
@@ -4969,6 +4975,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#calc","Colossus Descent adds the Colossus’s single-target basic DPS. Timeless uses the ordinary attack rotation.","Colossus Descent додає DPS базових атак Колоса по одній цілі. Для Timeless використовується звичайний цикл атак."],
     ["2026-11-26","calculator","changed","#calc","New imprints start at rank V. The builder estimates Poison, Volley, Ruin, area imprints and Shadow Clone for more builds. In a group, each imprint’s damage row shows DPS per target.","Нові відбитки починають із V рангу. Білдер оцінює Poison, Volley, Ruin, відбитки зі шкодою по площі та Shadow Clone для більшої кількості білдів. Для групи в рядку кожного відбитка показано DPS на ціль."],
     ["2026-11-26","mechanics","added","#guide?id=im-chain","Added a Chain bug report. Its bounces use 10 ATK for ordinary player units, even at high Absorb levels.","Chain позначено як баг. Для відскоків звичайних юнітів гравця береться 10 ATK навіть на високих рівнях Absorb."],
     ["2026-11-26","calculator","changed","#calc?v=1&unit=D%3Aprism%3A3%3A%ED%8C%8C%EB%A9%B8%EC%9D%98+%EC%B2%9C%EC%82%AC&lv=100&fps=210&ms=60&view=dps&gear=%7B%22targets%22%3A2%2C%22imprints%22%3A%5B%5B%22brace%22%2C5%5D%2C%5B%22chain%22%2C5%5D%2C%5B%22relentless%22%2C1%5D%2C%5B%22transfer%22%2C1%5D%2C%5B%22pierce%22%2C1%5D%5D%7D","Build DPS now assumes full Relentless stacks and ideal positioning for Pierce and Transfer. Open the two-target Angel of Ruin example to see how much each imprint contributes.","Білдер розраховує DPS із максимальними зарядами Relentless та ідеальним розташуванням цілей для Pierce і Transfer. Відкрий приклад Angel of Ruin з двома цілями, щоб переглянути внесок відбитків."],
@@ -5730,7 +5737,7 @@ globalThis.SlotUpdates=(()=>{
           } else if(result.unresolved.length) reason=SlotDpsPanel.unavailableReason(result,lang);
           else reason=uk?"Частоту базових влучань за цих налаштувань ще не перевірено.":"Basic hit rate is unverified at these settings.";
         }
-        return {u,reason,estimated:valid && result.estimatedTiming,estimateBasis:result?.estimateBasis,idealImprints:result?.idealImprints,name:u.name,class:copy.classes[u.sym],attack:valid?result.attack:null,hit:valid?result.hit:null,basic:valid?result.rotationBasic:null,
+        return {u,reason,estimated:valid && result.estimatedTiming,estimateBasis:result?.estimateBasis,basicColossus:result?.basicColossus,idealImprints:result?.idealImprints,name:u.name,class:copy.classes[u.sym],attack:valid?result.attack:null,hit:valid?result.hit:null,basic:valid?result.rotationBasic:null,
           cast:skill?(skill.inactive?0:skill.castDamage):null,skillDps:valid && result.total!==null?result.skillDps:null,dps:valid?result.total:null};
       }
       const evaluation = mods.evaluate(u,state,lang);
@@ -5758,7 +5765,7 @@ globalThis.SlotUpdates=(()=>{
     if (damage) el("list-settings").textContent="LV "+num(level,0)+" · "+num(fps,2)+" FPS · "+phaseText(phase)+" · "+(uk?"Цілі ":"Targets ")+(damageBuild.targets||1);
     const infoTip=el("rosterSettingsTip");
     infoTip.textContent=damage ? (uk?"Для кожного юніта застосовано рівень і спорядження з білда. Несумісні збірки позначено рискою.":"Each unit uses the builder’s level and loadout. Ineligible builds show a dash.") : SlotStaticLocale.textFor(infoTip,lang);
-    for (const {u,hard,rate,status,level:target,attack,hit,cast,basic,skillDps,dps,reason,estimated,estimateBasis,idealImprints} of rows) {
+    for (const {u,hard,rate,status,level:target,attack,hit,cast,basic,skillDps,dps,reason,estimated,estimateBasis,idealImprints,basicColossus} of rows) {
       const tr = node("tr",activeUnit.id === u.id ? "selected" : "");
       const td = node("td");
       const button = node("button","pick");
@@ -5775,7 +5782,7 @@ globalThis.SlotUpdates=(()=>{
       td.append(button);
       const unitClass=node("td","",copy.classes[u.sym]);
       SlotArt.prefix(unitClass,"class-"+u.sym);
-      const cells=compare==="damage" ? [num(attack),num(hit,0),num(cast,0)] : damage ? [basic,skillDps,dps].map((value,i)=>SlotDpsPanel.rateLabel(value,estimated || i===2 && idealImprints,lang,n=>num(n,3))) : [capLabel(hard),num(target,0),num(rate,3)];
+      const cells=compare==="damage" ? [num(attack),num(hit,0),num(cast,0)] : damage ? [basic,skillDps,dps].map((value,i)=>SlotDpsPanel.rateLabel(value,estimated || i===2 && (idealImprints || basicColossus),lang,n=>num(n,3))) : [capLabel(hard),num(target,0),num(rate,3)];
       tr.append(td,unitClass,...cells.map(v => node("td","",v)));
       if(compare==="dps" && estimated) for(const cell of Array.from(tr.cells).slice(2)) {
         if(cell.textContent.startsWith("≈")) cell.title=SlotDpsPanel.estimateNote(estimateBasis,lang);
