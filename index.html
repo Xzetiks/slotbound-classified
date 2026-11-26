@@ -1674,10 +1674,10 @@ globalThis.SlotBaseAspd = function (unit, level) {
     return "";
   }
 
-  function bonuses(unit, s) {
+  function bonuses(unit, s, upgradedBooks) {
     const use = id => s[id].on && !ineligible(id, unit, s);
     const engineer = s.engineer.on ? s.engineer.count : 0;
-    const bookLevel = id => s[id].level + Number(engineer >= 3);
+    const bookLevel = id => s[id].level + Number(engineer >= 3 && (!upgradedBooks || upgradedBooks.has(id)));
     const r = s.relentless;
     const quick = use("quick") ? [0,12,14,16][s.quick.level] : 0;
     return {
@@ -1726,10 +1726,10 @@ globalThis.SlotBaseAspd = function (unit, level) {
     });
   }
 
-  function evaluate(unit, state, lang = "en") {
+  function evaluate(unit, state, lang = "en", upgradedBooks) {
     const t = strings[locale(lang)];
     const s = normalized(state);
-    const b = bonuses(unit, s);
+    const b = bonuses(unit, s, upgradedBooks);
     const factor = v => 1 + v / 100;
     const traits = factor(b.reflex) * factor(b.strikes);
     const books = [b.archer, b.mage].filter(v => v > 0).map(factor);
@@ -2847,7 +2847,7 @@ globalThis.SlotDps = (() => {
     const stat = (id, key) => {
       const rank=items[id], item=data.items[id];
       if(!rank) return 0;
-      const improved=tiers.engineer>=(item.training?3:2);
+      const improved=tiers.engineer>=(item.training?3:2) && (!build.upgradedItems || build.upgradedItems.has(id));
       if(improved && rank===item.max && Number.isFinite(item.engineer[key])) return item.engineer[key];
       const value=item.stats[key];
       return typeof value==="number"?value:value?.[Math.min(item.max,rank+Number(improved))]||0;
@@ -2869,7 +2869,9 @@ globalThis.SlotDps = (() => {
       const rank=imprints.relentless;
       effects.relentless={on:true,level:rank,stacks:data.imprints.relentless.levels[rank-1].maxStacks};
     }
-    const timing = SlotModifiers.evaluate(unit,effects);
+    const speedItems={"32":"archer","34":"mage","38":"rapid"};
+    const upgradedBooks=build.upgradedItems && new Set([...build.upgradedItems].map(id=>speedItems[id]));
+    const timing = SlotModifiers.evaluate(unit,effects,"en",upgradedBooks);
     const aspd = clone?.aspd ?? SlotLevelPlan.prepared(unit,level,timing);
     const cadence=SlotTiming.effectiveAt(unit,aspd,offset,{...timing,fps});
     const ordinaryRate=cadence.hits;
@@ -3378,93 +3380,99 @@ globalThis.SlotDps = (() => {
   // Credit independent damage events to the source that delivered them. Divide changes
   // to the unit's own rotation across balanced orders of adding the equipped effects.
   function effectContributions(unit,level,fps,offset,build,result,source){
-    const components=[],targets=build.targets||1,plan=awakeningPlan(unit,level,build);
+    const stages=[[],[],[]],targets=build.targets||1;
+    const manuals={"31":"W","32":"A","33":"S","34":"M","35":"H","36":"D"};
+    const versatile=build.traits.some(p=>p?.[0]==="26"), engineer=build.factions?.engineer||0;
     for(const group of groups) build[group].forEach((pair,i)=>{
-      if(pair) components.push({key:group+pair[0],name:catalogs[group][pair[0]].name,
-        direct:directSources[group]?.includes(pair[0]),apply:b=>{b[group][i]=pair;}});
+      if(!pair) return;
+      const id=pair[0], name=catalogs[group][id].name;
+      const unlocked=group==="items" && versatile && manuals[id] && manuals[id]!==unit.sym;
+      stages[unlocked?1:0].push({key:group+id,name,direct:directSources[group]?.includes(id),apply:b=>{b[group][i]=pair;}});
+      if(group==="items" && engineer>=(data.items[id].training?3:2))
+        stages[2].push({key:id,name,apply:b=>{b.upgradedItems.add(id);}});
     });
-    for(const id of plan.picks) components.push({key:"awakening"+id,name:data.awakenings[id].name,
+    for(const id of awakeningPlan(unit,level,build).picks) stages[0].push({key:"awakening"+id,name:data.awakenings[id].name,
       apply:b=>b.awakenings.push(id)});
-    for(const [id,count] of Object.entries(build.factions||{})) components.push({
+    for(const [id,count] of Object.entries(build.factions||{})) if(id!=="engineer") stages[0].push({
       key:"faction"+id,name:id[0].toUpperCase()+id.slice(1),apply:b=>{b.factions[id]=count;}
     });
-    components.sort((a,b)=>a.key.localeCompare(b.key));
-    const n=components.length, full=2**n-1, cache=new Map();
-    function own(r){
-      if(r.total===null) return null;
-      if(!source) return (r.rotationBasic+r.skillDps+r.summonDps)*targets;
+    function amounts(r){
+      if(r.total===null) return [null,null];
+      const own=(r.rotationBasic+r.skillDps+r.summonDps)*targets;
+      if(!source) return [own,r.groupDps];
       const core={basic:r.rotationBasic,skill:r.skillDps,summons:r.summonDps};
-      return (core[source]??r.rows.find(([name])=>name===source)?.[1]??0)*targets;
+      const value=(core[source]??r.rows.find(([name])=>name===source)?.[1]??0)*targets;
+      return [value,value];
     }
-    cache.set(full,own(result));
-    function core(mask){
-      if(cache.has(mask)) return cache.get(mask);
-      const b={...build,traits:[],imprints:[],items:[],awakenings:[],factions:{}};
-      components.forEach((part,i)=>{if(mask & (1<<i)) part.apply(b);});
-      const value=own(calculate(unit,level,fps,offset,normalize(unit,b)));
-      cache.set(mask,value);
-      return value;
-    }
-    const base=core(0), credit=Array(n).fill(0);
-    let paths=0, incomplete=false;
-    function accumulate(order){
-      let mask=0,prev=base;
-      for(const i of order){
-        mask|=1<<i;
-        const next=core(mask);
-        if(next===null || prev===null){incomplete=true;return;}
-        credit[i]+=next-prev;prev=next;
+    const active=[],bonuses=[],rows=[],grouped={},sourceDetail=[];
+    let base;
+    for(const [stage,parts] of stages.entries()){
+      parts.sort((a,b)=>a.key.localeCompare(b.key));
+      const n=parts.length, full=2**n-1, cache=new Map();
+      function sample(mask){
+        if(cache.has(mask)) return cache.get(mask);
+        const b={...build,traits:[],imprints:[],items:[],awakenings:[],factions:{engineer},upgradedItems:new Set()};
+        active.forEach(p=>p.apply(b));
+        parts.forEach((p,i)=>{if(mask & (1<<i)) p.apply(b);});
+        const ready=normalize(unit,b);
+        ready.upgradedItems=b.upgradedItems;
+        const final=mask===full && stages.slice(stage+1).every(list=>!list.length);
+        const value=amounts(final?result:calculate(unit,level,fps,offset,ready));
+        cache.set(mask,value);
+        return value;
       }
-      paths++;
-    }
-    const indices=components.map((part,i)=>i);
-    if(n<=5){
-      function permute(prefix,left){
-        if(!left.length) accumulate(prefix);
-        else for(const i of left) permute([...prefix,i],left.filter(j=>j!==i));
+      if(stage===0) base=sample(0)[0];
+      if(!n) continue;
+      const ownCredit=Array(n).fill(0),allCredit=Array(n).fill(0);
+      let paths=0, incomplete=false;
+      function accumulate(order){
+        let mask=0,prev=sample(0);
+        for(const i of order){
+          mask|=1<<i;
+          const next=sample(mask);
+          if(next[0]===null || prev[0]===null){incomplete=true;return;}
+          ownCredit[i]+=next[0]-prev[0];allCredit[i]+=next[1]-prev[1];prev=next;
+        }
+        paths++;
       }
-      permute([],indices);
-    } else {
-      // Cyclic shifts put each effect in every position. Reverse orders balance pairs.
-      let seed=173;
-      for(let i=n-1;i>0;i--){
-        seed=(Math.imul(seed,1664525)+1013904223)>>>0;
-        const j=seed%(i+1);[indices[i],indices[j]]=[indices[j],indices[i]];
+      const indices=parts.map((_,i)=>i);
+      if(n<=5){
+        function permute(prefix,left){
+          if(!left.length) accumulate(prefix);
+          else for(const i of left) permute([...prefix,i],left.filter(j=>j!==i));
+        }
+        permute([],indices);
+      } else {
+        let seed=173;
+        for(let i=n-1;i>0;i--){
+          seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+          const j=seed%(i+1);[indices[i],indices[j]]=[indices[j],indices[i]];
+        }
+        for(let i=0;i<n;i++){
+          const order=indices.slice(i).concat(indices.slice(0,i));
+          accumulate(order);accumulate(order.reverse());
+        }
       }
-      for(let i=0;i<n;i++){
-        const order=indices.slice(i).concat(indices.slice(0,i));
-        accumulate(order);accumulate(order.reverse());
+      active.push(...parts);
+      const parent=[null,"Versatile","Engineer"][stage];
+      let sum=0;
+      for(const [i,part] of parts.entries()){
+        const own=incomplete?null:ownCredit[i]/paths, gain=incomplete?null:(stage?allCredit:ownCredit)[i]/paths;
+        const hits=part.direct && result.rows.find(([name])=>name===part.name);
+        rows.push([part.name,own===null?null:own+(hits?hits[1]*targets:0)]);
+        if(parent){
+          (grouped[parent]??=[]).push([part.name,gain]);
+          sum+=gain||0;
+        } else if(!part.direct && !(part.key==="traits26" && stages[1].length))
+          bonuses.push([part.name,gain,part.key.startsWith("awakening")]);
+        if(!parent) sourceDetail.push([part.name,own]);
+      }
+      if(parent){
+        bonuses.push([parent,incomplete?null:sum,false]);
+        sourceDetail.push([parent,incomplete?null:sum]);
       }
     }
-    if(source){
-      if(incomplete || !paths) return [];
-      return [["base",base],...components.map((part,i)=>[part.name,credit[i]/paths])];
-    }
-    const bonuses=[],rows=components.map((part,i)=>{
-      const hits=part.direct && result.rows.find(([name])=>name===part.name);
-      const gain=incomplete || !paths?null:credit[i]/paths;
-      if(!part.direct) bonuses.push([part.name,gain,part.key.startsWith("awakening")]);
-      return [part.name,gain===null?null:(hits?hits[1]*targets:0)+gain];
-    });
-    // Off-class basic manuals and the trait enabling them form one displayed bonus.
-    const manuals={"31":"W","32":"A","33":"S","34":"M","35":"H","36":"D","37":"T"};
-    const grouped={};
-    function combine(parent,children){
-      const members=bonuses.filter(([name])=>name===parent || children.includes(name));
-      if(members.length<2 || !members.some(([name])=>name===parent)) return;
-      grouped[parent]=members.flatMap(([name,v])=>grouped[name]||[[name,v]]);
-      const sum=members.some(([,v])=>v===null)?null:members.reduce((acc,[,v])=>acc+v,0);
-      for(const member of members) bonuses.splice(bonuses.indexOf(member),1);
-      bonuses.push([parent,sum,false]);
-    }
-    const offClass=build.items.filter(p=>p && manuals[p[0]] && unit.sym!==manuals[p[0]]).map(p=>data.items[p[0]].name);
-    combine(data.traits["26"].name,offClass);
-    if(build.factions?.engineer){
-      const improved=build.items.filter(p=>p && (!data.items[p[0]].training || build.factions.engineer>=3))
-        .map(p=>data.items[p[0]].name).filter(name=>!grouped.Versatile || !offClass.includes(name));
-      if(grouped.Versatile && build.factions.engineer>=3) improved.push("Versatile");
-      combine("Engineer",improved);
-    }
+    if(source) return base===null || sourceDetail.some(([,v])=>v===null)?[]:[["base",base],...sourceDetail];
     return {base,rows,bonuses,grouped};
   }
   return {groups,sourceRows,effectContributions,awakeningSlots,awakeningPlan,factionBonuses,conditions,catalogs,limit,maximum,available,normalize,calculate,fromSpeed,toSpeed};
@@ -3624,8 +3632,8 @@ globalThis.SlotDpsPanel = (() => {
       if(showChanges){
         changes??=engine.effectContributions(unit,level,fps,offset,build,result);
         rows=changes.bonuses.map(([name,value,awake])=>[awake?name+text(" (awakening)"," (пробудження)"):name,value]);
-        body.append(node("small",text("These bonuses are already included in basic, skill and summon DPS. Gains shared by several bonuses are apportioned between them.",
-          "Ці бонуси вже враховані в DPS базових атак, уміння й призваних істот. Спільний приріст розподілено між бонусами.")));
+        body.append(node("small",text("Bonuses are included in Damage sources. Versatile shows what off-class manuals add at their purchased ranks. Engineer shows the extra DPS from upgrading equipped items. Expand either row for the amount per item.",
+          "Ці бонуси вже враховано в джерелах шкоди. Versatile показує DPS від посібників інших класів на придбаних рангах. Engineer показує додатковий DPS від підсилення предметів. Розгорни відповідний рядок, щоб побачити внесок кожного предмета.")));
       } else {
         rows=[[text("Basic attacks","Базові атаки"),result.rotationBasic],[text("Skill","Уміння"),result.skillDps],
           ...(result.summonDps?[[text("Summons","Призвані істоти"),result.summonDps]]:[]),...engine.sourceRows(build,result)]
@@ -5473,6 +5481,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#calc","Burning Heart and other independent item bonuses have their own rows. Versatile lists the base contribution of off-class manuals, and Engineer lists only the DPS added by each upgrade.","Burning Heart та інші самостійні бонуси предметів мають власні рядки. Versatile показує базовий внесок посібників інших класів, а Engineer — лише додатковий DPS від підсилення кожного предмета."],
     ["2026-11-26","calculator","changed","#calc","The Damage sources table now shows total DPS in its header. For multiple targets it shows both group DPS and average DPS per target.","У шапці таблиці джерел шкоди тепер показано загальний DPS. Для кількох цілей видно і DPS по групі, і середній DPS на ціль."],
     ["2026-11-26","calculator","changed","#calc","Set earned stacks for Calculated Luck and Combat Experience. Expand DPS rows to see included contributions, including Chain and Transfer triggers. Tables show whole DPS and omit zero rows.","Задавайте стаки Calculated Luck і Combat Experience. Розгорніть рядок DPS, щоб побачити враховані складові, зокрема взаємні спрацювання Chain і Transfer. Таблиці показують цілі числа та приховують нульові рядки."],
     ["2026-11-26","calculator","changed","#guide?id=awake-draw","Awakening rank now follows your active picks automatically. The awakening guide explains when all selected ranks increase.","Ранг пробуджень тепер залежить від кількості активних виборів. У довіднику пояснено, коли підвищується ранг усіх вибраних пробуджень."],
