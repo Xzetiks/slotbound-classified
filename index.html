@@ -752,6 +752,7 @@ tbody tr.selected {
 .roster-table td:nth-child(2),.roster-table th:nth-child(2) {
   text-align:left;
 }
+.roster-table .class-start td {border-top:2px solid var(--line)}
 .roster-table th {
   padding:0;
 }
@@ -1383,7 +1384,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
         <div class="column-tip" role="tooltip" id="rosterDpsTip" hidden></div>
         <div class="column-tip" role="tooltip" id="rosterSettingsTip" data-i18n="rosterSettingsTip" hidden>The table uses the calculator’s FPS, animation offset and the bonuses that apply to each unit.</div>
         <div class="column-tip" role="tooltip" id="rosterUnitTip" data-i18n="rosterUnitTip" hidden>Unit name and rarity. Select the unit to open its build.</div>
-        <div class="column-tip" role="tooltip" id="rosterClassTip" data-i18n="rosterClassTip" hidden>The class of this unit form.</div>
+        <div class="column-tip" role="tooltip" id="rosterClassTip" data-i18n="rosterClassTip" hidden>Group units by class. Within each class, the rarest units appear first.</div>
         <div class="column-tip" role="tooltip" id="rosterHardTip" data-i18n="rosterHardTip" hidden>The lowest attack speed (ASPD) at which this unit reaches its maximum basic hits per second with the selected animation offset and combat modifiers.</div>
         <div class="column-tip" role="tooltip" id="rosterLevelTip" data-i18n="rosterLevelTip" hidden>The first Absorb level at which this unit reaches its ASPD hard cap with the current settings.</div>
         <div class="column-tip" role="tooltip" id="rosterRateTip" data-i18n="rosterRateTip" hidden>The most basic hits this unit can land on one target per second with the current settings. Each hit counts, including a second hit from the same attack.</div>
@@ -2900,7 +2901,8 @@ globalThis.SlotDps = (() => {
       ap("A09","basic_damage_bonus_pct")+ap("A25","basic_damage_bonus_pct")+ap("D08","basic_damage_bonus_pct")+
       (nTargets===1?ap("D03"):0)+(items["15"] && nTargets>1?0:5*ap("D01"))+
       (distance<=40 && nTargets>=2?ap("W04"):0)+(basicContacts===1?ap("W05"):0)+(build.lowHP?0:ap("S07"));
-    const basicBonus = awakeBasic + (traits["24"]?(build.experienceStacks||0)/100:0) + stat("01","basicAttackDamageBonus") + stat("48","basicAttackBonus")
+    const burningHeart=stat("48","basicAttackBonus");
+    const basicBonus = awakeBasic + (traits["24"]?(build.experienceStacks||0)/100:0) + stat("01","basicAttackDamageBonus") + burningHeart
       + (unit.rangedBasic && build.targets>1 ? stat("15","damageBonus") : 0)
       + (unit.rangedBasic ? stat("18","basicAttackDamageBonus") : stat("64","basicAttackBonus"));
     const rounded = n => Math.max(1,Math.floor(n+.5));
@@ -3142,7 +3144,7 @@ globalThis.SlotDps = (() => {
     const primaryRate=rotationRate, bear=!clone && form.skills.includes("mountain_roar");
     const petRate=bear ? 1/data.skills.mountain_roar.summonPeriod : 0;
     const volleyRate=imprints.volley ? (primaryRate||0)/(doubleShot?2:1)/imprint("volley").every : 0;
-    const volleyHit=imprints.volley ? rounded(basicTargetAttack*(1+basicBonus)*imprint("volley").extraHitFrac*mask) : 0;
+    const volleyHit=imprints.volley ? rounded(basicTargetAttack*(1+(basicBonus-burningHeart))*imprint("volley").extraHitFrac*mask) : 0;
     const ruinHit=imprints.ruin ? rounded(rounded(singleTargetAttack*imprint("ruin").dotRatio)*mask) : 0;
     const impactRows=[];
     let quakePacket=null;
@@ -3994,7 +3996,7 @@ globalThis.SlotDpsPanel = (() => {
     rosterHardCap: "Хардкап ASPD",
     rosterMaxHits: "Макс. влучань/с",
     rosterUnitTip: "Ім’я та рідкість юніта. Вибери юніта, щоб побачити розрахунок швидкості його атак.",
-    rosterClassTip: "Клас юніта в цій формі.",
+    rosterClassTip: "Групує юнітів за класом. Усередині кожного класу найрідкісніші юніти стоять першими.",
     rosterHardTip: "Найменше значення швидкості атаки (ASPD), за якого юніт досягає максимальної кількості базових влучань за секунду з вибраним зсувом анімації та бойовими модифікаторами.",
     rosterLevelTip: "Перший рівень Absorb, на якому юніт досягає хардкапу ASPD за поточних налаштувань.",
     rosterRateTip: "Максимальна кількість базових влучань юніта по одній цілі за секунду за поточних налаштувань. Якщо одна атака влучає двічі, враховуються обидва влучання.",
@@ -5481,6 +5483,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#roster","All units now opens grouped by class, with the rarest forms first. The DPS column shows available and required imprint slots when a build exceeds the limit. Burning Heart now boosts only the basic hit in a Volley sequence.","У таблиці «Усі юніти» форми згруповано за класом, від найрідкісніших у кожній групі. Якщо для білда бракує слотів відбитків, у колонці DPS видно доступну й потрібну кількість. Burning Heart тепер підсилює лише базовий удар у серії Volley."],
     ["2026-11-26","calculator","changed","#calc","Burning Heart and other independent item bonuses have their own rows. Versatile lists the base contribution of off-class manuals, and Engineer lists only the DPS added by each upgrade.","Burning Heart та інші самостійні бонуси предметів мають власні рядки. Versatile показує базовий внесок посібників інших класів, а Engineer — лише додатковий DPS від підсилення кожного предмета."],
     ["2026-11-26","calculator","changed","#calc","The Damage sources table now shows total DPS in its header. For multiple targets it shows both group DPS and average DPS per target.","У шапці таблиці джерел шкоди тепер показано загальний DPS. Для кількох цілей видно і DPS по групі, і середній DPS на ціль."],
     ["2026-11-26","calculator","changed","#calc","Set earned stacks for Calculated Luck and Combat Experience. Expand DPS rows to see included contributions, including Chain and Transfer triggers. Tables show whole DPS and omit zero rows.","Задавайте стаки Calculated Luck і Combat Experience. Розгорніть рядок DPS, щоб побачити враховані складові, зокрема взаємні спрацювання Chain і Transfer. Таблиці показують цілі числа та приховують нульові рядки."],
@@ -5671,11 +5674,12 @@ globalThis.SlotUpdates=(()=>{
     el("calc-view").dataset.mode=builderMode;
     el("roster-mode").value=compare;
     for (const b of document.querySelectorAll(".build-modes button")) b.setAttribute("aria-pressed",String(b.dataset.mode===builderMode));
-    if (previous!==compare && !["name","class"].includes(sortColumn)) {sortColumn="name";sortAscending=true;}
+    if (previous!==compare && !["name","class"].includes(sortColumn)) {sortColumn="class";sortAscending=true;}
   }
   const levels = globalThis.SlotLevelPlan;
   let frame = 0;
-  let sortColumn = "name";
+  const rarityOrder = ["prism","legendary","rare","advanced","normal","special"];
+  let sortColumn = "class";
   let sortAscending = true;
   const capsCache = new Map();
   const stepsCache = new Map();
@@ -5783,7 +5787,6 @@ globalThis.SlotUpdates=(()=>{
     }
     el("class-filter").replaceChildren();
     const byName = new Intl.Collator(locale());
-    const rarityOrder = ["prism","legendary","rare","advanced","normal","special"];
     for (const [sym, label] of Object.entries(copy.classes)) {
       const forms = units.filter(u => u.sym === sym).sort((a,b) =>
         rarityOrder.indexOf(a.grade) - rarityOrder.indexOf(b.grade) || byName.compare(a.name,b.name));
@@ -6245,17 +6248,23 @@ globalThis.SlotUpdates=(()=>{
         const valid=JSON.stringify(loadout)===JSON.stringify(damageBuild) && level>=u.minLevel;
         const result=valid && SlotDps.calculate(u,level,fps,phase,loadout);
         const skill=valid && result.skills.length===1 && result.skills[0];
-        let reason="";
+        let reason="",reasonLabel="—";
         if (compare==="dps" && (!valid || result.total===null)) {
           if (level<u.minLevel) reason=uk?"Мінімальний рівень цієї форми — "+u.minLevel+".":"This form requires LV "+u.minLevel+".";
           else if (!valid) {
+            const used=damageBuild.imprints.filter(Boolean).length, slots=SlotDps.limit(u,"imprints");
+            if(used>slots){
+              reasonLabel=uk?"Слоти: "+slots+"/"+used:"Slots: "+slots+"/"+used;
+              reason=uk?"У цієї форми "+slots+" слотів для відбитків. Для білда потрібно "+used+".":"This form has "+slots+" imprint slots. The build requires "+used+".";
+            } else {
             const unavailable=SlotDps.groups.flatMap(group=>damageBuild[group].flatMap((pair,i)=>
               pair && loadout[group][i]?.[0]!==pair[0] ? [SlotDps.catalogs[group][pair[0]].name] : []));
-            reason=(uk?"У цей білд юніта не можна додати ":"This unit cannot equip this loadout with ")+unavailable.join(", ")+".";
+            reason=unavailable.length?(uk?"У цей білд юніта не можна додати ":"This unit cannot equip this loadout with ")+unavailable.join(", ")+".":(uk?"Ця форма несумісна з вибраним білдом.":"This form cannot equip the selected build.");
+            }
           } else if(result.unresolved.length) reason=SlotDpsPanel.unavailableReason(result,lang);
           else reason=uk?"Частоту базових влучань за цих налаштувань ще не перевірено.":"Basic hit rate is unverified at these settings.";
         }
-        return {u,reason,estimated:valid && result.estimatedTiming,estimateBasis:result?.estimateBasis,basicColossus:result?.basicColossus,idealImprints:result?.idealImprints,name:u.name,class:copy.classes[u.sym],attack:valid?result.attack:null,hit:valid?result.hit:null,basic:valid?result.rotationBasic:null,
+        return {u,reason,reasonLabel,estimated:valid && result.estimatedTiming,estimateBasis:result?.estimateBasis,basicColossus:result?.basicColossus,idealImprints:result?.idealImprints,name:u.name,class:copy.classes[u.sym],attack:valid?result.attack:null,hit:valid?result.hit:null,basic:valid?result.rotationBasic:null,
           cast:skill?(skill.inactive?0:skill.castDamage):null,skillDps:valid && result.total!==null?result.skillDps:null,dps:valid?result.total:null};
       }
       const evaluation = mods.evaluate(u,state,lang);
@@ -6269,7 +6278,8 @@ globalThis.SlotUpdates=(()=>{
       // A form without a cap stays below measured values in either direction.
       if ((left == null) !== (right == null)) return left == null ? 1 : -1;
       const order = typeof left === "string" ? collator.compare(left,right) : left - right;
-      return (sortAscending ? order : -order) || collator.compare(a.name,b.name) || collator.compare(a.class,b.class);
+      const rarity=sortColumn==="class"?rarityOrder.indexOf(a.u.grade)-rarityOrder.indexOf(b.u.grade):0;
+      return (sortAscending ? order : -order) || rarity || collator.compare(a.name,b.name) || collator.compare(a.class,b.class);
     });
     for (const button of document.querySelectorAll(".roster-table [data-sort]")) {
       const header = button.closest("th");
@@ -6283,8 +6293,11 @@ globalThis.SlotUpdates=(()=>{
     if (damage) el("list-settings").textContent="LV "+num(level,0)+" · "+num(fps,2)+" FPS · "+phaseText(phase)+" · "+(uk?"Цілі ":"Targets ")+(damageBuild.targets||1);
     const infoTip=el("rosterSettingsTip");
     infoTip.textContent=damage ? (uk?"Для кожного юніта застосовано рівень і спорядження з білда. Несумісні збірки позначено рискою.":"Each unit uses the builder’s level and loadout. Ineligible builds show a dash.") : SlotStaticLocale.textFor(infoTip,lang);
-    for (const {u,hard,rate,status,level:target,attack,hit,cast,basic,skillDps,dps,reason,estimated,estimateBasis,idealImprints,basicColossus} of rows) {
+    let previousClass;
+    for (const {u,hard,rate,status,level:target,attack,hit,cast,basic,skillDps,dps,reason,reasonLabel,estimated,estimateBasis,idealImprints,basicColossus} of rows) {
       const tr = node("tr",activeUnit.id === u.id ? "selected" : "");
+      if(sortColumn==="class" && previousClass && previousClass!==u.sym) tr.classList.add("class-start");
+      previousClass=u.sym;
       const td = node("td");
       const button = node("button","pick");
       button.type = "button";
@@ -6307,7 +6320,7 @@ globalThis.SlotUpdates=(()=>{
       }
       if(compare==="dps" && idealImprints && dps!==null) tr.lastElementChild.title=SlotDpsPanel.estimateNote("imprints",lang);
       if(reason) {
-        const why=node("button","dps-reason","—");
+        const why=node("button","dps-reason",reasonLabel);
         why.type="button"; why.setAttribute("aria-label",u.name+". "+reason);
         tr.lastElementChild.replaceChildren(why);
       }
