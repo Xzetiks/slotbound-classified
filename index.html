@@ -1246,6 +1246,12 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
 .dps-breakdown tbody th { font-weight:normal; }
 .dps-bar { display:block; height:3px; margin-top:.2rem; background:#8ed7b8; }
 .dps-bar.negative { background:#e39588; }
+
+.dps-detail-trigger { border:0; padding:.2rem 0; background:transparent; color:inherit; text-align:left; font:inherit; cursor:pointer; }
+.dps-detail-trigger::before { content:"▸ "; color:#8ed7b8; }
+.dps-detail-trigger[aria-expanded=true]::before { content:"▾ "; }
+.dps-part { font-size:.88em; opacity:.88; }
+.dps-breakdown .dps-part th { padding-inline-start:1.1rem; }
 </style>
   
   
@@ -2766,6 +2772,9 @@ globalThis.SlotDps = (() => {
     for(const [id,key] of [["tribe","tribeFallen"],["abyss","grudge"],["outlaw","lowHP"]])
       if(out.factions?.[id] && raw[key]===true) out[key]=true;
     if(out.factions?.undead && Number.isInteger(raw.deaths) && raw.deaths>0) out.deaths=Math.min(10,raw.deaths);
+    for(const [id,key] of [["23","luckStacks"],["24","experienceStacks"]]){
+      if(out.traits.some(pair=>pair?.[0]===id) && Number.isSafeInteger(raw?.[key]) && raw[key]>0) out[key]=raw[key];
+    }
     if(Array.isArray(raw?.awakenings)){
       const picks=[...new Set(raw.awakenings.filter(id=>data.units[unit.id].awakenings.includes(id)))].slice(0,3);
       if(picks.length) out.awakenings=picks;
@@ -2775,18 +2784,30 @@ globalThis.SlotDps = (() => {
   }
   // A queued Chain can start from a Transfer hit. Its bounces can spread once more.
   // The two native re-entry guards prevent either effect from repeating itself.
-  function spreadDamage(packets, targets, spread, chain, rows) {
+  function spreadDamage(packets, targets, spread, chain, rows, parts) {
     const neighbors=spread ? Math.min(targets-1,spread.spreadTargets) : 0;
     const bounces=chain ? Math.min(targets-1,chain.bounces)*chain.chance : 0;
     // battlefield 555/740 reads source.atk; ordinary units store damage in dmg, so it falls back to 10.
     const bounce=chain ? Math.max(1,Math.round(10*chain.bounceDamageFrac)) : 0;
     const events=packets.reduce((sum,[,frequency])=>sum+frequency,0);
     const chainRate=events*(1+neighbors)*bounces;
-    if(chain) rows.push([data.imprints.chain.name,chainRate*bounce]);
+    const sources={};
+    for(const [damage,frequency,source] of packets){
+      const entry=sources[source]??=[0,0];
+      entry[0]+=frequency*bounces*bounce;
+      if(spread) entry[1]+=frequency*neighbors*Math.max(1,Math.round(damage*spread.spreadFrac));
+    }
+    if(chain){
+      rows.push([data.imprints.chain.name,chainRate*bounce]);
+      parts.Chain=Object.entries(sources).map(([name,[value]])=>[name,value]);
+      if(spread) parts.Chain.push(["Transfer",events*neighbors*bounces*bounce]);
+    }
     if(spread) {
       const perHit=damage=>Math.max(1,Math.round(damage*spread.spreadFrac));
       const fromHits=packets.reduce((sum,[damage,frequency])=>sum+frequency*perHit(damage),0);
       rows.push([data.imprints.transfer.name,neighbors*(fromHits+chainRate*perHit(bounce))]);
+      parts.Transfer=Object.entries(sources).map(([name,[,value]])=>[name,value]);
+      if(chain) parts.Transfer.push(["Chain",neighbors*chainRate*perHit(bounce)]);
     }
   }
   // At exact frame boundaries, repeated float subtraction can leave one extra frame on the native timer.
@@ -2856,6 +2877,7 @@ globalThis.SlotDps = (() => {
     const early = Math.min(level-1,29), late = Math.max(level-30,0);
     let attack = form.atk * (1 + early*.01 + late*.005);
     for (const id of ["01","08","15","17"]) attack *= 1 + roll(id)/100;
+    if(traits["23"]) attack*=1+(build.luckStacks||0)/100;
     if(build.judgmentWave) attack*=1+roll("20")/100;
     if(build.bossWave) attack*=1+roll("21")/100;
     attack *= 1 + 5 * roll("10")/100;
@@ -2875,7 +2897,7 @@ globalThis.SlotDps = (() => {
       ap("A09","basic_damage_bonus_pct")+ap("A25","basic_damage_bonus_pct")+ap("D08","basic_damage_bonus_pct")+
       (nTargets===1?ap("D03"):0)+(items["15"] && nTargets>1?0:5*ap("D01"))+
       (distance<=40 && nTargets>=2?ap("W04"):0)+(basicContacts===1?ap("W05"):0)+(build.lowHP?0:ap("S07"));
-    const basicBonus = awakeBasic + stat("01","basicAttackDamageBonus") + stat("48","basicAttackBonus")
+    const basicBonus = awakeBasic + (traits["24"]?(build.experienceStacks||0)/100:0) + stat("01","basicAttackDamageBonus") + stat("48","basicAttackBonus")
       + (unit.rangedBasic && build.targets>1 ? stat("15","damageBonus") : 0)
       + (unit.rangedBasic ? stat("18","basicAttackDamageBonus") : stat("64","basicAttackBonus"));
     const rounded = n => Math.max(1,Math.floor(n+.5));
@@ -2902,7 +2924,7 @@ globalThis.SlotDps = (() => {
     }
     const meanHit=boostedHit===null ? hit : hit+(boostedHit-hit)/(doubleShot?4:2);
     const basic = rate === null ? null : rate * meanHit;
-    const rows = [];
+    const rows = [],parts={};
     const targets=build.targets||1;
     let estimatedProcs=false;
     const imprint = id => data.imprints[id].levels[imprints[id]-1];
@@ -3216,37 +3238,39 @@ globalThis.SlotDps = (() => {
         const pierce=imprints.pierce && imprint("pierce");
         const pierceTargets=pierce && !["Magnus","Grenadier","Demolitionist"].includes(unit.name)
           ? Math.min(targets-1,pierce.maxPierceTargets) : 0;
-        let piercedDps=0;
+        let piercedDps=0,volleyPierced=0;
         for(const [base,freq] of primary) {
           if(!freq) continue;
           for(const [ratio,count] of rule?.basic || [[1,Math.min(targets,basicLimit)]]) {
-            packets.push([rounded(base*scale*ratio),freq*count/targets]);
+            packets.push([rounded(base*scale*ratio),freq*count/targets,"basic"]);
           }
           if(pierceTargets) {
             const damage=rounded(base*scale*pierce.pierceDamageFrac), contacts=freq*pierceTargets/targets;
-            packets.push([damage,contacts]);
+            packets.push([damage,contacts,"Pierce"]);
             piercedDps+=damage*contacts;
           }
         }
         if(volleyRate) {
-          packets.push([volleyHit,volleyRate/targets]);
+          packets.push([volleyHit,volleyRate/targets,"Volley"]);
           if(unit.rangedBasic && pierceTargets) {
             const damage=rounded(volleyHit*pierce.pierceDamageFrac), contacts=volleyRate*pierceTargets/targets;
-            packets.push([damage,contacts]);
+            packets.push([damage,contacts,"Pierce"]);
             piercedDps+=damage*contacts;
+            volleyPierced+=damage*contacts;
           }
         }
-        if(ruinHit) packets.push([ruinHit,1]);
-        if(quakePacket) packets.push(quakePacket);
+        if(ruinHit) packets.push([ruinHit,1,"Ruin"]);
+        if(quakePacket) packets.push([...quakePacket,"Earthquake"]);
+        if(pierce && volleyPierced) parts.Pierce=[["basic",piercedDps-volleyPierced],["Volley",volleyPierced]];
         if(pierce) rows.push([data.imprints.pierce.name,piercedDps]);
         if(skills[0].cadence) for(const [ratio,count] of procHits || []) {
-          packets.push([skillHit(ratio),count/(skills[0].cadence*targets)]);
+          packets.push([skillHit(ratio),count/(skills[0].cadence*targets),"skill"]);
         }
         if(id==="mountain_roar" && summonDps>0)
-          packets.push([rounded(summonDps*targets*s.summonPeriod),1/(s.summonPeriod*targets)]);
+          packets.push([rounded(summonDps*targets*s.summonPeriod),1/(s.summonPeriod*targets),"summons"]);
         if(spreadKnown && (imprints.transfer || imprints.chain)) {
           spreadPackets=packets;
-          spreadDamage(packets,targets,imprints.transfer && imprint("transfer"),imprints.chain && imprint("chain"),rows);
+          spreadDamage(packets,targets,imprints.transfer && imprint("transfer"),imprints.chain && imprint("chain"),rows,parts);
         }
       }
 
@@ -3323,6 +3347,7 @@ globalThis.SlotDps = (() => {
       if(copy.total===null) unresolved.add("Shadow Clone");
       else {
         rows.push(["Shadow Clone",copy.total*uptime]);
+        parts["Shadow Clone"]=[["basic",copy.rotationBasic],...copy.rows].map(([name,v])=>[name,v*uptime]);
       }
       estimatedProcs=true;
     }
@@ -3333,7 +3358,7 @@ globalThis.SlotDps = (() => {
       estimateBasis=estimateBasis || "proc";
     }
     const total=rotationBasic===null || skillDps===null || unresolved.size ? null : rows.reduce((sum,row)=>sum+row[1],rotationBasic+skillDps+summonDps);
-    return {directGroup,attack,aspd,rate,hit:unit.canBasic===false || basicFactor===null ? null : meanHit*basicFactor,boostedHit,ordinaryHit:hit,basic,rotationBasic,rotationRate,skillDps,summonDps,rows,skills,total,estimatedTiming,groupDps:total===null?null:total*targets,
+    return {parts,directGroup,attack,aspd,rate,hit:unit.canBasic===false || basicFactor===null ? null : meanHit*basicFactor,boostedHit,ordinaryHit:hit,basic,rotationBasic,rotationRate,skillDps,summonDps,rows,skills,total,estimatedTiming,groupDps:total===null?null:total*targets,
       basicColossus:!!imprints.colossus_descent,idealImprints,estimateBasis,unresolved:[...unresolved]};
   }
   const directSources={
@@ -3351,7 +3376,7 @@ globalThis.SlotDps = (() => {
   }
   // Credit independent damage events to the source that delivered them. Divide changes
   // to the unit's own rotation across balanced orders of adding the equipped effects.
-  function effectContributions(unit,level,fps,offset,build,result){
+  function effectContributions(unit,level,fps,offset,build,result,source){
     const components=[],targets=build.targets||1,plan=awakeningPlan(unit,level,build);
     for(const group of groups) build[group].forEach((pair,i)=>{
       if(pair) components.push({key:group+pair[0],name:catalogs[group][pair[0]].name,
@@ -3364,7 +3389,12 @@ globalThis.SlotDps = (() => {
     });
     components.sort((a,b)=>a.key.localeCompare(b.key));
     const n=components.length, full=2**n-1, cache=new Map();
-    const own=r=>r.total===null?null:(r.rotationBasic+r.skillDps+r.summonDps)*targets;
+    function own(r){
+      if(r.total===null) return null;
+      if(!source) return (r.rotationBasic+r.skillDps+r.summonDps)*targets;
+      const core={basic:r.rotationBasic,skill:r.skillDps,summons:r.summonDps};
+      return (core[source]??r.rows.find(([name])=>name===source)?.[1]??0)*targets;
+    }
     cache.set(full,own(result));
     function core(mask){
       if(cache.has(mask)) return cache.get(mask);
@@ -3405,13 +3435,36 @@ globalThis.SlotDps = (() => {
         accumulate(order);accumulate(order.reverse());
       }
     }
+    if(source){
+      if(incomplete || !paths) return [];
+      return [["base",base],...components.map((part,i)=>[part.name,credit[i]/paths])];
+    }
     const bonuses=[],rows=components.map((part,i)=>{
       const hits=part.direct && result.rows.find(([name])=>name===part.name);
       const gain=incomplete || !paths?null:credit[i]/paths;
       if(!part.direct) bonuses.push([part.name,gain,part.key.startsWith("awakening")]);
       return [part.name,gain===null?null:(hits?hits[1]*targets:0)+gain];
     });
-    return {base,rows,bonuses};
+    // Off-class basic manuals and the trait enabling them form one displayed bonus.
+    const manuals={"31":"W","32":"A","33":"S","34":"M","35":"H","36":"D","37":"T"};
+    const grouped={};
+    function combine(parent,children){
+      const members=bonuses.filter(([name])=>name===parent || children.includes(name));
+      if(members.length<2 || !members.some(([name])=>name===parent)) return;
+      grouped[parent]=members.flatMap(([name,v])=>grouped[name]||[[name,v]]);
+      const sum=members.some(([,v])=>v===null)?null:members.reduce((acc,[,v])=>acc+v,0);
+      for(const member of members) bonuses.splice(bonuses.indexOf(member),1);
+      bonuses.push([parent,sum,false]);
+    }
+    const offClass=build.items.filter(p=>p && manuals[p[0]] && unit.sym!==manuals[p[0]]).map(p=>data.items[p[0]].name);
+    combine(data.traits["26"].name,offClass);
+    if(build.factions?.engineer){
+      const improved=build.items.filter(p=>p && (!data.items[p[0]].training || build.factions.engineer>=3))
+        .map(p=>data.items[p[0]].name).filter(name=>!grouped.Versatile || !offClass.includes(name));
+      if(grouped.Versatile && build.factions.engineer>=3) improved.push("Versatile");
+      combine("Engineer",improved);
+    }
+    return {base,rows,bonuses,grouped};
   }
   return {groups,sourceRows,effectContributions,awakeningSlots,awakeningPlan,factionBonuses,conditions,catalogs,limit,maximum,available,normalize,calculate,fromSpeed,toSpeed};
 })();
@@ -3557,6 +3610,11 @@ globalThis.SlotDpsPanel = (() => {
     const section=node("section",undefined,"dps-breakdown"),buttons=node("div",undefined,"dps-switch"),body=node("div");
     section.append(node("h3",text("DPS breakdown","Розподіл DPS")),buttons,body);
     let changes;
+    const integer=new Intl.NumberFormat(text("en-US","uk-UA"),{maximumFractionDigits:0});
+    const names={basic:text("Basic attacks","Базові атаки"),skill:text("Skill","Уміння"),summons:text("Summons","Призвані істоти"),base:text("Before build bonuses","До бонусів білда")};
+    const hasGear=engine.groups.some(k=>build[k].some(Boolean)) || build.awakenings?.length || build.factions;
+    const visible=v=>v===null || Math.abs(v)>=.5;
+    const tables=new Map();
     function paint(){
       body.replaceChildren();
       for(const button of buttons.children) button.setAttribute("aria-pressed",String((button===buttons.lastChild)===showChanges));
@@ -3572,13 +3630,45 @@ globalThis.SlotDpsPanel = (() => {
           ...(result.summonDps?[[text("Summons","Призвані істоти"),result.summonDps]]:[]),...engine.sourceRows(build,result)]
           .map(([name,value])=>[name,value===null?null:value*count]);
       }
-      if(!rows.length){body.append(node("small",text("No separate damage modifiers in this build.","У цьому білді немає окремих модифікаторів шкоди.")));return;}
-      const table=node("table"),header=table.createTHead().insertRow(), signed=v=>(showChanges && v>0?"+":"")+fmt(v);
+      rows=rows.filter(([,v])=>visible(v));
+      if(!rows.length){body.append(node("small",text("No damage to show.","Немає шкоди для відображення.")));return;}
+      const table=node("table"),header=table.createTHead().insertRow(), signed=v=>(showChanges && v>=.5?"+":"")+integer.format(Math.abs(v)<.5?0:v);
       for(const title of [showChanges?text("Modifier","Модифікатор"):text("Source","Джерело"),...(count>1?[text("Group DPS","DPS групи"),text("DPS/target","DPS/ціль")]:["DPS"])])
         header.append(node("th",title));
       const tbody=table.createTBody(), max=Math.max(1,...rows.map(([,v])=>Math.abs(v||0)));
       for(const [name,v] of [...rows].sort((a,b)=>Math.abs(b[1]||0)-Math.abs(a[1]||0))){
         const row=tbody.insertRow(),label=node("th",name);label.scope="row";row.append(label);
+        const key=Object.keys(names).find(k=>names[k]===name)||name;
+        if(v!==null && (showChanges?changes.grouped[name]:hasGear)){
+          const trigger=node("button",name,"dps-detail-trigger");
+          label.replaceChildren(trigger);
+          trigger.type="button";trigger.setAttribute("aria-expanded","false");
+          let children=[];
+          trigger.onclick=()=>{
+            const open=trigger.getAttribute("aria-expanded")==="true";
+            trigger.setAttribute("aria-expanded",String(!open));
+            if(open){children.forEach(tr=>tr.remove());children=[];return;}
+            let detail;
+            if(showChanges) detail=changes.grouped[name];
+            else if(result.parts[key]) detail=result.parts[key].map(([n,val])=>[n,val*count]);
+            else{
+              if(!tables.has(key)) tables.set(key,engine.effectContributions(unit,level,fps,offset,build,result,key));
+              detail=tables.get(key);
+            }
+            let after=row;
+            for(const [source,amount] of detail.filter(([,a])=>visible(a)).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]))){
+              const tr=node("tr",undefined,"dps-part"), th=node("th",text("Of which · ","З них · ")+(names[source]||source));
+              th.scope="row";tr.append(th);tr.insertCell().textContent=amount===null?"—":signed(amount);
+              if(count>1) tr.insertCell().textContent=amount===null?"—":signed(amount/count);
+              after.after(tr);after=tr;children.push(tr);
+            }
+            if(!children.length){
+              const tr=node("tr",undefined,"dps-part"),cell=tr.insertCell();
+              cell.colSpan=count>1?3:2;cell.textContent=text("Breakdown unavailable.","Розподіл недоступний.");
+              row.after(tr);children.push(tr);
+            }
+          };
+        }
         if(v!==null){
           const bar=node("span",undefined,"dps-bar"+(v<0?" negative":""));
           bar.style.width=(100*Math.abs(v)/max)+"%";bar.setAttribute("aria-hidden","true");label.append(bar);
@@ -3654,6 +3744,19 @@ globalThis.SlotDpsPanel = (() => {
         if(group==="traits" && pair?.[0]==="05") box.append(node("small",targets===1?
           text("Active against the last target.","Бонус діє по останній цілі."):
           text("Requires exactly one target.","Для бонусу має залишитися одна ціль.")));
+        if(group==="traits" && ["23","24"].includes(pair?.[0])){
+          const luck=pair[0]==="23",key=luck?"luckStacks":"experienceStacks";
+          const label=node("label",text("Bonus stacks","Стаки бонусу"),"field"), input=node("input");
+          input.type="number";input.min="0";input.step="1";input.value=build[key]||0;input.dataset.focus=key;
+          input.onchange=()=>{
+            const n=input.valueAsNumber;
+            if(!Number.isSafeInteger(n)||n<0){input.value=build[key]||0;return;}
+            onChange({...build,[key]:n});panel.querySelector('[data-focus="'+key+'"]')?.focus();
+          };
+          label.append(input);box.append(label,node("small",luck?
+            text("1 stack = +1% ATK per 2 winning lines made by Nudge or Blast.","1 стак = +1% ATK за 2 виграшні лінії, створені Nudge або Blast."):
+            text("1 stack = +1% basic damage per 10 credited kills.","1 стак = +1% шкоди базових атак за 10 зарахованих убивств.")));
+        }
         const condition=pair && engine.conditions[group+":"+pair[0]];
         if(condition) {
           const [key,en,uk]=condition;
@@ -5367,6 +5470,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#calc","Set earned stacks for Calculated Luck and Combat Experience. Expand DPS rows to see included contributions, including Chain and Transfer triggers. Tables show whole DPS and omit zero rows.","Задавайте стаки Calculated Luck і Combat Experience. Розгорніть рядок DPS, щоб побачити враховані складові, зокрема взаємні спрацювання Chain і Transfer. Таблиці показують цілі числа та приховують нульові рядки."],
     ["2026-11-26","calculator","changed","#guide?id=awake-draw","Awakening rank now follows your active picks automatically. The awakening guide explains when all selected ranks increase.","Ранг пробуджень тепер залежить від кількості активних виборів. У довіднику пояснено, коли підвищується ранг усіх вибраних пробуджень."],
     ["2026-11-26","calculator","changed","#calc","Direct hits such as Transfer and Ruin appear only in Damage sources. Damage modifiers shows bonuses already included in the unit’s attacks, skills and summons.","Transfer, Ruin та інші джерела власних влучань показано лише в «Джерелах шкоди». «Модифікатори шкоди» показують бонуси, вже враховані в атаках, уміннях і призваних істотах."],
     ["2026-11-26","calculator","added","#calc","DPS breakdown shows each source’s group and per-target damage. DPS by effect credits each source’s hits and allocates changes in the unit’s own DPS among its bonuses.","Розподіл DPS показує шкоду кожного джерела по групі та в середньому по цілі. DPS за ефектами зараховує влучання їхнім джерелам і розподіляє приріст власного DPS юніта між бонусами."],
