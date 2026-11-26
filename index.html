@@ -702,18 +702,21 @@ tbody tr.selected {
   color:var(--ink);
 }
 
-.roster-controls {
-  display:grid;
-  grid-template-columns:1.45fr 1fr;
-  gap:14px;
-}
-
-.roster-controls .field {
+.roster-search {
+  max-width:26rem;
   margin:0;
 }
 
+.list-info .field {
+  margin:0;
+  max-width:100%;
+}
+
 .list-info {
-  margin:20px 0 8px;
+  justify-content:flex-start;
+  flex-wrap:wrap;
+  gap:.5rem 1rem;
+  margin:12px 0;
   color:var(--muted);
   font-size:.89rem;
 }
@@ -722,6 +725,7 @@ tbody tr.selected {
 .build-share a {text-decoration:none}
 .build-share input {width:100%}
 .roster-settings {
+  margin-inline-start:auto;
   display:flex;
   flex-wrap:wrap;
   align-items:center;
@@ -933,14 +937,10 @@ footer {
   .chart-wrap {
     height:175px;
   }
-  .roster-controls {
-    grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);
-  }
   .list-info {
-    align-items:start;
-    flex-direction:column;
-    gap:2px;
+    gap:.5rem;
   }
+  .roster-settings {flex-basis:100%;margin-inline-start:0}
   .readout>div:not(:first-child) {
     padding-left:8px;
   }
@@ -1368,11 +1368,12 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
     </section>
     <section id="roster-view" hidden>
       <div class="intro"><h1 data-i18n="rosterHeading">All Tier 3 units</h1><p data-i18n="rosterIntro">Compare attack speed, damage per hit, or sustained DPS with your current settings. Select a unit to open its build.</p></div>
-      <section class="panel roster-panel"><div class="roster-controls">
-      <div class="field"><label for="roster-mode" data-i18n="compare">Compare</label><select id="roster-mode"><option value="speed" data-i18n="compareSpeed">Attack speed</option><option value="damage" data-i18n="compareDamage">Damage</option><option value="dps">DPS</option></select></div>
-        <div class="field"><label for="search" data-i18n="search">Search by name</label><input id="search" type="search" placeholder="e.g. Eclipse" data-i18n-placeholder="example"></div>
+      <section class="panel roster-panel">
+        <div class="field roster-search"><label for="search" data-i18n="search">Search by name</label><input id="search" type="search" placeholder="e.g. Eclipse" data-i18n-placeholder="example"></div>
+        <div class="list-info"><b id="list-count"></b>
+        <div class="field"><label for="roster-mode" data-i18n="compare">Compare</label><select id="roster-mode"><option value="speed" data-i18n="compareSpeed">Attack speed</option><option value="damage" data-i18n="compareDamage">Damage</option><option value="dps">DPS</option></select></div>
         <div class="field"><label for="class-filter" data-i18n="class">Class</label><select id="class-filter"></select></div>
-      </div><div class="list-info"><b id="list-count"></b><div class="roster-settings"><span id="list-settings" tabindex="0" aria-describedby="rosterSettingsTip"></span><button type="button" class="roster-reset" id="roster-reset" data-i18n="reset">Reset</button></div></div>
+        <div class="roster-settings"><span id="list-settings" tabindex="0" aria-describedby="rosterSettingsTip"></span><button type="button" class="roster-reset" id="roster-reset" data-i18n="reset">Reset</button></div></div>
       <div class="table-scroll"><table class="roster-table"><thead><tr>
         <th scope="col" aria-sort="ascending"><button type="button" data-sort="name" data-i18n="unit" aria-describedby="rosterUnitTip">Unit</button></th>
         <th scope="col"><button type="button" data-sort="class" data-i18n="class" aria-describedby="rosterClassTip">Class</button></th>
@@ -5482,6 +5483,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","design","changed","#roster","Name search is on the left. Compact comparison and class filters sit beside the unit count.","Пошук за назвою тепер ліворуч. Компактні поля порівняння та класу розташовано поруч із кількістю юнітів."],
     ["2026-11-26","calculator","changed","#roster","All units opens in alphabetical order again. Click a column heading to rank the full list by that stat.","У таблиці «Усі юніти» відновлено початковий порядок за назвою. Натисни заголовок колонки, щоб відсортувати весь список за відповідною характеристикою."],
     ["2026-11-26","calculator","changed","#roster","All units now opens grouped by class, with the rarest forms first. The DPS column shows available and required imprint slots when a build exceeds the limit. Burning Heart now boosts only the basic hit in a Volley sequence.","У таблиці «Усі юніти» форми згруповано за класом, від найрідкісніших у кожній групі. Якщо для білда бракує слотів відбитків, у колонці DPS видно доступну й потрібну кількість. Burning Heart тепер підсилює лише базовий удар у серії Volley."],
     ["2026-11-26","calculator","changed","#calc","Burning Heart and other independent item bonuses have their own rows. Versatile lists the base contribution of off-class manuals, and Engineer lists only the DPS added by each upgrade.","Burning Heart та інші самостійні бонуси предметів мають власні рядки. Versatile показує базовий внесок посібників інших класів, а Engineer — лише додатковий DPS від підсилення кожного предмета."],
