@@ -1199,6 +1199,9 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
 .dps-controls {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:.65rem}
 .dps-controls fieldset {min-width:0;margin:0;border:1px solid #465257;border-radius:.5rem;padding:.45rem}
 .dps-controls legend {padding:0 .25rem;font-weight:600}
+.gear-clear-all {margin-inline-start:.5rem;padding:.15rem .45rem;font:inherit;font-size:.8rem;border:1px solid var(--line);border-radius:4px;background:var(--deep);color:var(--ink);cursor:pointer}
+.gear-clear-all:enabled:hover,.gear-clear-all:focus-visible {color:var(--gold);border-color:var(--gold)}
+.gear-clear-all:disabled {opacity:.45;cursor:default}
 .dps-slot {display:flex;gap:.3rem;margin:.25rem 0}
 .dps-slot select {width:100%;min-width:0;text-overflow:ellipsis}
 .dps-slot > select {flex:0 0 auto;width:auto;max-width:46%}
@@ -3561,7 +3564,7 @@ globalThis.SlotDpsPanel = (() => {
       list.replaceChildren();
       entries=[];
       let container=list;
-      for(const [id,name,category,searchName=name] of (isUnit?options:[["",empty],...options])){
+      for(const [id,name,category,searchName=name] of options){
         if(query && (!id || !searchName.toLowerCase().includes(query))) continue;
         if(category && container.getAttribute("aria-label")!==category){
           container=node("div");
@@ -3777,6 +3780,15 @@ globalThis.SlotDpsPanel = (() => {
     for (const group of engine.groups) {
       const count = build[group].filter(Boolean).length, max = engine.limit(unit,group);
       const box = node("fieldset"), legend = node("legend",labels[group]+" · "+count+"/"+max);
+      const clear=node("button",text("Clear all","Очистити всі"),"gear-clear-all");
+      clear.type="button";
+      clear.disabled=count===0;
+      clear.setAttribute("aria-label",labels[group]+" · "+clear.textContent);
+      clear.onclick=()=>{
+        onChange({...build,[group]:[]});
+        panel.querySelector('[data-focus="'+group+'0"]')?.focus();
+      };
+      legend.append(clear);
       box.append(legend);
       // Keep a single empty inventory/imprint slot visible until it is filled.
       const shown = group === "traits" ? max : Math.min(max,build[group].length+1);
@@ -5534,6 +5546,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#calc","Clear all items, imprints or traits in their own section with one click. Empty slot is no longer a menu option.","Предмети, відбитки або риси можна очистити одним кліком у відповідному розділі. Пункт «Вільний слот» прибрано з випадаючих списків."],
     ["2026-11-26","calculator","changed","#calc","Search units by part of a name while keeping class groups. Use × beside an equipped trait, imprint, item or awakening to clear its slot.","Шукайте юнітів за частиною назви зі збереженням груп за класами. Кнопка × біля вибраної риси, відбитка, предмета чи пробудження очищує слот."],
     ["2026-11-26","calculator","changed","#calc","Search traits, imprints, items and awakenings by any part of their name. Newly selected items and traits start at their maximum rank.","Риси, відбитки, предмети та пробудження можна шукати за частиною назви. Нові предмети й риси одразу отримують максимальний ранг."],
     ["2026-11-26","calculator","changed","#calc","ATK, damage and DPS are rounded to whole numbers in Unit Builder and All units.","ATK, шкоду та DPS у білдері й таблиці «Усі юніти» округлено до цілих чисел."],
