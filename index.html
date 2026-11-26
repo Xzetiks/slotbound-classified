@@ -1296,7 +1296,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
             <div class="field"><label for="level" data-i18n="currentLevel">Current Absorb level</label><input id="level" type="number" min="1" step="1" value="1000" inputmode="numeric"></div>
             <div class="field offset"><div class="field-title"><label for="phase" data-i18n="offset">Animation offset</label><output for="phase" id="phase-value">0.060 s</output></div>
               <input id="phase" type="range" min="0" max="120" step="1" value="60"><div class="range-ticks" id="phase-stops"><button type="button" data-phase="0">0</button><button type="button" data-phase="60" data-i18n="midOffset">0.06</button><button type="button" data-phase="120" data-i18n="endOffset">0.12 s</button></div>
-              <small data-i18n="offsetHelp">Each copy of a unit gets its own offset. Move the slider to see how it changes the cap.</small>
+              <small data-i18n="offsetHelp">Each copy of a unit has its own offset. DPS changes when that head start lets the unit land more hits between casts or attack more often.</small>
             </div>
             <div class="field"><label for="fps" data-i18n="averageFps">Average FPS</label><input id="fps" type="number" min="30" max="1000" step="any" value="210" aria-describedby="fps-help"><small id="fps-help" data-i18n="fpsHelp">Enter your average combat FPS (30–1000). The estimate assumes evenly spaced frames.</small></div>
           </section>
@@ -2718,6 +2718,22 @@ globalThis.SlotDps = (() => {
     const unpoisoned=(1-stats.chance)**whole*(1-(attempts-whole)*stats.chance);
     return (1-unpoisoned)/stats.tickInterval;
   }
+  // A queued Chain can start from a Transfer hit. Its bounces can spread once more.
+  // The two native re-entry guards prevent either effect from repeating itself.
+  function spreadDamage(packets, targets, spread, chain, rows) {
+    const neighbors=spread ? Math.min(targets-1,spread.spreadTargets) : 0;
+    const bounces=chain ? Math.min(targets-1,chain.bounces)*chain.chance : 0;
+    // battlefield 555/740 reads source.atk; ordinary units store damage in dmg, so it falls back to 10.
+    const bounce=chain ? Math.max(1,Math.round(10*chain.bounceDamageFrac)) : 0;
+    const events=packets.reduce((sum,[,frequency])=>sum+frequency,0);
+    const chainRate=events*(1+neighbors)*bounces;
+    if(chain) rows.push([data.imprints.chain.name,chainRate*bounce]);
+    if(spread) {
+      const perHit=damage=>Math.max(1,Math.round(damage*spread.spreadFrac));
+      const fromHits=packets.reduce((sum,[damage,frequency])=>sum+frequency*perHit(damage),0);
+      rows.push([data.imprints.transfer.name,neighbors*(fromHits+chainRate*perHit(bounce))]);
+    }
+  }
   // At exact frame boundaries, repeated float subtraction can leave one extra frame on the native timer.
   function timerFrames(duration,dt) {
     const frames=duration/dt;
@@ -2755,16 +2771,13 @@ globalThis.SlotDps = (() => {
       effects[key].on = !!items[id];
       if (items[id]) effects[key].level = items[id];
     }
-    let timing = SlotModifiers.evaluate(unit,effects);
-    const aspd = SlotLevelPlan.prepared(unit,level,timing);
-    let cadence=SlotTiming.effectiveAt(unit,aspd,offset,{...timing,fps});
-    const steadyStacks=imprints.relentless && !imprints.brace && form.skills.every(id=>passiveConditions[id]) &&
-      cadence.starts>0 && 1/cadence.starts+1/fps<=.5;
-    if(steadyStacks){
-      effects.relentless={on:true,level:imprints.relentless,stacks:data.imprints.relentless.levels[imprints.relentless-1].maxStacks};
-      timing=SlotModifiers.evaluate(unit,effects);
-      cadence=SlotTiming.effectiveAt(unit,aspd,offset,{...timing,fps});
+    if(imprints.relentless) {
+      const rank=imprints.relentless;
+      effects.relentless={on:true,level:rank,stacks:data.imprints.relentless.levels[rank-1].maxStacks};
     }
+    const timing = SlotModifiers.evaluate(unit,effects);
+    const aspd = SlotLevelPlan.prepared(unit,level,timing);
+    const cadence=SlotTiming.effectiveAt(unit,aspd,offset,{...timing,fps});
     const ordinaryRate=cadence.hits;
     let rate=ordinaryRate;
     const early = Math.min(level-1,29), late = Math.max(level-30,0);
@@ -2787,7 +2800,7 @@ globalThis.SlotDps = (() => {
     const hit = rounded(basicTargetAttack * (1+basicBonus) * mask);
     let boostedHit=null, buildupIntervals=null;
     const doubleShot=form.skills.includes("twilight_barrage");
-    if (imprints.brace && !imprints.volley && !imprints.relentless && rate && (rate===cadence.starts || doubleShot) && !items["53"]) {
+    if (imprints.brace && !imprints.volley && rate && (rate===cadence.starts || doubleShot) && !items["53"]) {
       const ticks=Math.max(1,Math.floor(1200/aspd+.5));
       const extended=1+Math.min(15/ticks,.5);
       const slow=SlotTiming.effectiveAt(unit,aspd,offset,{...timing,fps,interval:timing.interval*extended});
@@ -2805,7 +2818,7 @@ globalThis.SlotDps = (() => {
     const inertImprints = ["bash","blind","block","chain","chill","execute","lifesteal","majesty","overdrive","overlord","pierce","revival","shrink","transfer","undying_soul","self_destruct"];
     for (const id of Object.keys(imprints)) {
       if (inertImprints.includes(id)) continue;
-      if ((id==="relentless" && steadyStacks) || (id==="brace" && (boostedHit!==null || !unit.canBasic && form.skills.includes("mountain_roar")))) continue;
+      if (id==="relentless" || (id==="brace" && (boostedHit!==null || !unit.canBasic && form.skills.includes("mountain_roar")))) continue;
       const stats = imprint(id);
       // Only use the independent hit streams whose damage and cadence are verified.
       if (id==="poison" && steadyBasicProcs && !imprints.volley && !imprints.ruin && !traits["05"] && !items["53"] &&
@@ -2841,7 +2854,7 @@ globalThis.SlotDps = (() => {
       if(castDamage===null && impactRules && !items["53"] && !traits["05"])
         castDamage=impactRules[0].cast.reduce((sum,[ratio,count])=>sum+count*rounded(attack*ratio),0);
       let cadence=null, lostTime=null;
-      const fixedTiming=rate>0 && (!imprints.brace || buildupIntervals) && !imprints.relentless && !items["40"];
+      const fixedTiming=rate>0 && (!imprints.brace || buildupIntervals) && !items["40"];
       const cooldown=s.cd*(1+roll("22")/100);
       const approximation=s.approxAnimation;
       const animation=s.castAnimation || approximation;
@@ -2973,7 +2986,7 @@ globalThis.SlotDps = (() => {
       estimatedProcs=true;
     }
     const targets=build.targets||1;
-    let excludesPierce=false;
+    const idealImprints=!!(imprints.relentless || targets>1 && (imprints.pierce || imprints.transfer));
     let basicFactor=1;
     if(targets>1) {
       const id=form.skills[0], s=data.skills[id];
@@ -2983,27 +2996,28 @@ globalThis.SlotDps = (() => {
         eclipse_snipe:1,shatter_cannon:1,devouring_arrow:1,triple_shot:1,cataclysm_flurry:1,
         celestial_return:1,wings_of_victory:1,healing_sanctuary:1,prophetic_mirror:1,ruin_tremor:1};
       const rule=impactRules?.[targets-1];
+      const primaryRate=rotationRate, primaryDps=rotationBasic;
       const basicLimit=rule ? rule.basic.reduce((sum,[,count])=>sum+count,0) : id==="doom_resonance"?3:Object.hasOwn(skillLimits,id)?1:null;
-      let castGroup=null;
-      if(id==="doom_resonance" && skills[0].castDamage!==null) {
+      let castHits=rule?.cast;
+      if(id==="doom_resonance") {
         const direct=Math.min(targets,s.directTargets);
-        const echoes=direct*Math.min(targets-1,s.echoTargets);
-        castGroup=direct*skills[0].castDamage+echoes*rounded(attack*s.echoRatio);
-      } else if(id==="flash_barrage" && skills[0].castDamage!==null) {
-        castGroup=skills[0].castDamage+(Math.min(targets,s.targetLimit)-1)*rounded(attack*s.extraRatio);
-      } else if(id==="arcane_unleashing" && skills[0].castDamage!==null){
+        castHits=[[s.ratio,direct],[s.echoRatio,direct*Math.min(targets-1,s.echoTargets)]];
+      } else if(id==="flash_barrage") {
+        castHits=[[s.ratio,1],[s.extraRatio,Math.min(targets,s.targetLimit)-1]];
+      } else if(id==="arcane_unleashing"){
         const recipients=Math.min(s.beams,targets);
-        castGroup=0;
+        castHits=[];
         for(let i=0;i<recipients;i++){
           const beams=Math.floor((s.beams+recipients-1-i)/recipients);
-          for(const ratio of s.pulses) castGroup+=rounded(attack*beams*ratio);
+          for(const ratio of s.pulses) castHits.push([beams*ratio,1]);
         }
-      } else if(rule && !items["53"] && !traits["05"]) {
-        castGroup=rule.cast.reduce((sum,[ratio,count])=>sum+rounded(attack*ratio)*count,0);
-      } else if(Object.hasOwn(skillLimits,id)) {
-        if(skills[0].inactive) castGroup=0;
-        else if(skills[0].castDamage!==null) castGroup=skills[0].castDamage*Math.min(targets,skillLimits[id]);
+      } else if(!rule && Object.hasOwn(skillLimits,id)) {
+        const coefficients=s.hitRatios || s.jabRatios || (s.steadyRatio ? [s.steadyRatio] : SlotDpsRotations.formulas[id]);
+        if(skills[0].inactive || skills[0].castDamage===0) castHits=[];
+        else if(coefficients) castHits=coefficients.map(ratio=>[ratio,Math.min(targets,skillLimits[id])]);
       }
+      const castGroup=castHits && (skills[0].inactive || skills[0].castDamage!==null)
+        ? castHits.reduce((sum,[ratio,count])=>sum+count*rounded(attack*ratio),0) : null;
       if(basicLimit===null || castGroup===null) {
         unresolved.add(s.name);
         rotationBasic=rotationRate=skillDps=summonDps=null;
@@ -3019,31 +3033,46 @@ globalThis.SlotDps = (() => {
         skills[0].castDamage=castGroup/targets;
         skillDps=castGroup===0?0:skills[0].cadence ? skills[0].castDamage/skills[0].cadence : null;
       }
-      const groupNeutral=["bash","blind","chill","block","lifesteal","majesty","overdrive","overlord","revival","self_destruct","shrink","undying_soul"];
+      const groupNeutral=["bash","blind","chill","block","lifesteal","majesty","overdrive","overlord","revival","self_destruct","shrink","undying_soul","relentless","pierce"];
       if(boostedHit!==null || id==="mountain_roar") groupNeutral.push("brace");
-      const descent=id==="doom_resonance" && rotationRate!==null && skills[0].cadence;
-      if(descent) {
-        groupNeutral.push("chain","transfer","pierce");
-        excludesPierce=!!imprints.pierce;
-      }
+      // The recorded shapes contain individual owner hits and exclude summon/DoT damage.
+      const spreadKnown=!!castHits && rotationRate!==null;
+      if(spreadKnown) groupNeutral.push("chain","transfer");
       for(const id of Object.keys(imprints)) if(!groupNeutral.includes(id)) unresolved.add(data.imprints[id].name);
       for(const [name] of rows) unresolved.add(name);
       rows.length=0;
-      if(descent && (imprints.transfer || imprints.chain)) {
-        const spread=imprints.transfer && imprint("transfer"), chain=imprints.chain && imprint("chain");
-        const neighbors=spread ? Math.min(targets-1,spread.spreadTargets) : 0;
-        const bounces=chain ? Math.min(targets-1,chain.bounces)*chain.chance : 0;
-        // battlefield 555/740 reads source.atk (ordinary allies store damage in dmg), defaulting to 10.
-        const bounce=chain ? rounded(10*chain.bounceDamageFrac) : 0;
-        const boostedRate=boostedHit>hit ? Math.max(0,(rotationBasic-rotationRate*hit)/(boostedHit-hit)) : 0;
-        const direct=Math.min(targets,s.directTargets)/targets/skills[0].cadence;
-        const packets=[[hit,rotationRate-boostedRate],[boostedHit||hit,boostedRate],
-          [rounded(attack*s.ratio),direct],[rounded(attack*s.echoRatio),direct*Math.min(targets-1,s.echoTargets)]];
-        const events=packets.reduce((n,[,frequency])=>n+frequency,0);
-        const chainRate=events*(1+neighbors)*bounces;
-        if(chain) rows.push([data.imprints.chain.name,chainRate*bounce]);
-        if(spread) rows.push([data.imprints.transfer.name,neighbors*(packets.reduce((sum,[d,f])=>sum+f*rounded(d*spread.spreadFrac),0)
-          +chainRate*rounded(bounce*spread.spreadFrac))]);
+      if(rotationRate!==null && (imprints.pierce || imprints.transfer || imprints.chain)) {
+        // One projectile per eligible primary hit, even when the same swing deals area damage.
+        const packets=[];
+        const fractionBoosted=boostedHit>hit && primaryRate>0
+          ? Math.max(0,Math.min(1,(primaryDps/primaryRate-hit)/(boostedHit-hit))) : 0;
+        const primary=[[hit,primaryRate*(1-fractionBoosted)],[boostedHit||hit,primaryRate*fractionBoosted]];
+        // Some skills buff basic-hit damage during part of a cycle. Preserve their mean multiplier.
+        const baseDps=primary.reduce((sum,[damage,freq])=>sum+damage*freq,0);
+        const scale=baseDps>0 ? primaryDps/baseDps : 1;
+        const pierce=imprints.pierce && imprint("pierce");
+        const pierceTargets=pierce && !["Magnus","Grenadier","Demolitionist"].includes(unit.name)
+          ? Math.min(targets-1,pierce.maxPierceTargets) : 0;
+        let piercedDps=0;
+        for(const [base,freq] of primary) {
+          if(!freq) continue;
+          for(const [ratio,count] of rule?.basic || [[1,Math.min(targets,basicLimit)]]) {
+            packets.push([rounded(base*scale*ratio),freq*count/targets]);
+          }
+          if(pierceTargets) {
+            const damage=rounded(base*scale*pierce.pierceDamageFrac), contacts=freq*pierceTargets/targets;
+            packets.push([damage,contacts]);
+            piercedDps+=damage*contacts;
+          }
+        }
+        if(pierce) rows.push([data.imprints.pierce.name,piercedDps]);
+        if(skills[0].cadence) for(const [ratio,count] of castHits || []) {
+          packets.push([rounded(attack*ratio),count/(skills[0].cadence*targets)]);
+        }
+        if(id==="mountain_roar" && summonDps>0)
+          packets.push([rounded(summonDps*targets*s.summonPeriod),1/(s.summonPeriod*targets)]);
+        if(spreadKnown && (imprints.transfer || imprints.chain))
+          spreadDamage(packets,targets,imprints.transfer && imprint("transfer"),imprints.chain && imprint("chain"),rows);
       }
       if(traits["05"]) unresolved.add(data.traits["05"].name);
     }
@@ -3051,13 +3080,10 @@ globalThis.SlotDps = (() => {
       estimatedTiming=true;
       estimateBasis=estimateBasis || "proc";
     }
-    const subtotal=rotationBasic===null || skillDps===null || unresolved.size ? null : rows.reduce((sum,row)=>sum+row[1],rotationBasic+skillDps+summonDps);
-    const beforePierce=excludesPierce?subtotal:null;
-    if(excludesPierce) unresolved.add(data.imprints.pierce.name);
-    const total=unresolved.size?null:subtotal;
+    const total=rotationBasic===null || skillDps===null || unresolved.size ? null : rows.reduce((sum,row)=>sum+row[1],rotationBasic+skillDps+summonDps);
     return {attack,aspd,rate,hit:unit.canBasic===false || basicFactor===null ? null : meanHit*basicFactor,boostedHit,ordinaryHit:hit,basic,rotationBasic,rotationRate,skillDps,summonDps,rows,skills,total,estimatedTiming,groupDps:total===null?null:total*targets,
       poisonTick:imprints.poison ? rounded((build.targetHP||100000)*imprint("poison").maxHPFrac) : null,
-      beforePierce,estimateBasis,unresolved:[...unresolved]};
+      idealImprints,estimateBasis,unresolved:[...unresolved]};
   }
   return {groups,catalogs,limit,maximum,available,normalize,calculate,fromSpeed,toSpeed};
 })();
@@ -3169,6 +3195,9 @@ globalThis.SlotDpsPanel = (() => {
     return root;
   }
   function estimateNote(basis, lang) {
+    if(basis==="imprints") return lang==="uk"
+      ? "Оцінка DPS враховує вибрані відбитки. Relentless має максимум зарядів свого рангу. Для Pierce і Transfer усі доступні цілі перебувають у зоні влучання."
+      : "DPS uses the selected imprints. Relentless stays at its rank’s maximum stacks. Every eligible Pierce and Transfer target is within reach.";
     if(basis==="proc") return lang==="uk"
       ? "≈ Середній внесок відбитка оцінено за частотою базових влучань, шансом спрацювання та його таймером."
       : "≈ Average imprint damage uses the basic hit rate, trigger chance and effect timing.";
@@ -3256,13 +3285,9 @@ globalThis.SlotDpsPanel = (() => {
     const stats = node("dl",undefined,"dps-numbers");
     const rateLabelForBuild=value=>rateLabel(value,result.estimatedTiming,lang,fmt);
     const stat = (label,value) => { const group=node("div"); group.append(node("dt",label),node("dd",value)); stats.append(group); };
-    if(result.beforePierce!==null){
-      stat(text("DPS/target before Pierce","DPS/ціль до Pierce"),fmt(result.beforePierce));
-      stat(text("Group DPS before Pierce","DPS по групі до Pierce"),fmt(targets*result.beforePierce));
-    }else{
-      stat(text("Average DPS per target","Середній DPS на ціль"),rateLabelForBuild(result.total));
-      if(targets>1) stat(text("Group DPS","DPS по групі"),rateLabelForBuild(result.groupDps));
-    }
+    const totalLabel=value=>rateLabel(value,result.estimatedTiming || result.idealImprints,lang,fmt);
+    stat(text("Average DPS per target","Середній DPS на ціль"),totalLabel(result.total));
+    if(targets>1) stat(text("Group DPS","DPS по групі"),totalLabel(result.groupDps));
     stat("ATK",fmt(result.attack));
     if(result.boostedHit!==null) {
       stat(text("Basic hit","Базове влучання"),fmt(result.ordinaryHit));
@@ -3300,13 +3325,13 @@ globalThis.SlotDpsPanel = (() => {
       skills.append(p);
     }
     const distance=SlotDpsData.units[unit.id].targetDistance;
-    const intro=node("p",text("Stationary enemies at full health share a spot "+distance+" units away in the same lane. Damage per target is averaged over all selected enemies, including any the attack misses.","Нерухомі вороги з повним HP стоять в одній точці за "+distance+" од. у тій самій смузі. Шкоду усереднено за всіма вибраними цілями, включно з тими, у які атака не влучила."));
+    const intro=node("p",text("Stationary enemies at full health are grouped in the same lane. The first target is "+distance+" units away. DPS per target is averaged over all selected enemies.","Нерухомі вороги з повним HP стоять групою в одній смузі. Перша ціль на відстані "+distance+" од. DPS на ціль усереднено за всіма вибраними ворогами."));
     const note=node("small",text("Party buffs and temporary ASPD toggles apply in Attack speed. Chance effects use their long-run average.","Бонуси загону та тимчасові бонуси ASPD діють у режимі швидкості атаки. Для випадкових спрацювань наведено довгострокове середнє."));
     const warning=node("p",unavailableReason(result,lang),"dps-status");
-    if(result.beforePierce!==null) warning.textContent=text("Pierce can add damage when its projectile reaches another enemy. The numbers above include the basic attacks, skill and their imprint effects before those extra hits.","Pierce додає шкоду, коли його снаряд досягає іншого ворога. Значення вище враховують базові атаки, вміння та їхні відбитки до цих додаткових влучань.");
     warning.hidden=!result.unresolved.length;
     const content=panel.querySelector(".dps-content");
     content.replaceChildren(targetLabel,stats,skills,warning);
+    if(result.idealImprints) content.append(node("small",estimateNote("imprints",lang)));
     if(result.estimatedTiming && result.rotationBasic!==null) content.append(node("small",estimateNote(result.estimateBasis,lang)));
     content.append(controls,intro,note);
   }
@@ -3363,7 +3388,7 @@ globalThis.SlotDpsPanel = (() => {
     averageFps: "Середній FPS",
     fpsHelp: "Введи середній FPS під час бою (30–1000). Розрахунок передбачає рівномірні інтервали між кадрами.",
     endOffset: "0,12 с",
-    offsetHelp: "Кожна копія юніта отримує власний зсув. Пересунь повзунок, щоб побачити, як зміниться кап.",
+    offsetHelp: "Кожна копія юніта має власний зсув. DPS змінюється, коли завдяки зсуву юніт встигає завдати більше ударів між застосуваннями вміння або частіше атакувати.",
     modifiers: "Модифікатори",
     disableAll: "Вимкнути всі",
     disableModifiers: "Вимкнути всі модифікатори",
@@ -4879,6 +4904,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#calc?v=1&unit=D%3Aprism%3A3%3A%ED%8C%8C%EB%A9%B8%EC%9D%98+%EC%B2%9C%EC%82%AC&lv=100&fps=210&ms=60&view=dps&gear=%7B%22targets%22%3A2%2C%22imprints%22%3A%5B%5B%22brace%22%2C5%5D%2C%5B%22chain%22%2C5%5D%2C%5B%22relentless%22%2C1%5D%2C%5B%22transfer%22%2C1%5D%2C%5B%22pierce%22%2C1%5D%5D%7D","Build DPS now assumes full Relentless stacks and ideal positioning for Pierce and Transfer. Open the two-target Angel of Ruin example to see how much each imprint contributes.","Білдер розраховує DPS із максимальними зарядами Relentless та ідеальним розташуванням цілей для Pierce і Transfer. Відкрий приклад Angel of Ruin з двома цілями, щоб переглянути внесок відбитків."],
     ["2026-11-26","calculator","changed","#calc","Twelve more units now estimate DPS from your build. Phantom’s time between casts depends on how quickly he lands seven attacks. Salamander’s total includes Flame Spirit. Changing level, FPS or animation offset recalculates the result.","Ще для 12 юнітів білдер оцінює DPS за вибраними налаштуваннями. Частота застосування вміння Phantom залежить від того, як швидко він завдає семи ударів. DPS Salamander враховує шкоду Flame Spirit. Зміна рівня, FPS або зсуву анімації запускає перерахунок."],
     ["2026-11-26","calculator","added","#calc?v=1&unit=S%3Alegendary%3A3%3ASpearRevenant&lv=100&fps=120&ms=60&view=dps","Revenant, High Elf, Demolitionist, General and Frost Empress now show estimated DPS for more builds. The ≈ symbol marks values that depend on estimated timing.","Для Revenant, High Elf, Demolitionist, General та Frost Empress тепер доступний приблизний DPS для більшої кількості білдів. Знак ≈ позначає значення, які залежать від оцінки часу."],
     ["2026-11-26","calculator","changed","#calc","Angel of Ruin now includes alternating Buildup hits during the attack windows between casts. With Chain and Transfer, the builder shows their average damage. When Pierce is equipped against a group, it labels the subtotal before extra projectile hits.","Для Angel of Ruin білдер враховує чергування ударів Buildup між застосуваннями вміння та середню шкоду від Chain і Transfer. З Pierce проти групи окремо позначено DPS до додаткових влучань снаряда."],
@@ -5637,7 +5663,7 @@ globalThis.SlotUpdates=(()=>{
           } else if(result.unresolved.length) reason=SlotDpsPanel.unavailableReason(result,lang);
           else reason=uk?"Частоту базових влучань за цих налаштувань ще не перевірено.":"Basic hit rate is unverified at these settings.";
         }
-        return {u,reason,estimated:valid && result.estimatedTiming,estimateBasis:result?.estimateBasis,name:u.name,class:copy.classes[u.sym],attack:valid?result.attack:null,hit:valid?result.hit:null,basic:valid?result.rotationBasic:null,
+        return {u,reason,estimated:valid && result.estimatedTiming,estimateBasis:result?.estimateBasis,idealImprints:result?.idealImprints,name:u.name,class:copy.classes[u.sym],attack:valid?result.attack:null,hit:valid?result.hit:null,basic:valid?result.rotationBasic:null,
           cast:skill?(skill.inactive?0:skill.castDamage):null,skillDps:valid && result.total!==null?result.skillDps:null,dps:valid?result.total:null};
       }
       const evaluation = mods.evaluate(u,state,lang);
@@ -5665,7 +5691,7 @@ globalThis.SlotUpdates=(()=>{
     if (damage) el("list-settings").textContent="LV "+num(level,0)+" · "+num(fps,2)+" FPS · "+phaseText(phase)+" · "+(uk?"Цілі ":"Targets ")+(damageBuild.targets||1);
     const infoTip=el("rosterSettingsTip");
     infoTip.textContent=damage ? (uk?"Для кожного юніта застосовано рівень і спорядження з білда. Несумісні збірки позначено рискою.":"Each unit uses the builder’s level and loadout. Ineligible builds show a dash.") : SlotStaticLocale.textFor(infoTip,lang);
-    for (const {u,hard,rate,status,level:target,attack,hit,cast,basic,skillDps,dps,reason,estimated,estimateBasis} of rows) {
+    for (const {u,hard,rate,status,level:target,attack,hit,cast,basic,skillDps,dps,reason,estimated,estimateBasis,idealImprints} of rows) {
       const tr = node("tr",activeUnit.id === u.id ? "selected" : "");
       const td = node("td");
       const button = node("button","pick");
@@ -5682,11 +5708,12 @@ globalThis.SlotUpdates=(()=>{
       td.append(button);
       const unitClass=node("td","",copy.classes[u.sym]);
       SlotArt.prefix(unitClass,"class-"+u.sym);
-      const cells=compare==="damage" ? [num(attack),num(hit,0),num(cast,0)] : damage ? [basic,skillDps,dps].map(value=>SlotDpsPanel.rateLabel(value,estimated,lang,n=>num(n,3))) : [capLabel(hard),num(target,0),num(rate,3)];
+      const cells=compare==="damage" ? [num(attack),num(hit,0),num(cast,0)] : damage ? [basic,skillDps,dps].map((value,i)=>SlotDpsPanel.rateLabel(value,estimated || i===2 && idealImprints,lang,n=>num(n,3))) : [capLabel(hard),num(target,0),num(rate,3)];
       tr.append(td,unitClass,...cells.map(v => node("td","",v)));
       if(compare==="dps" && estimated) for(const cell of Array.from(tr.cells).slice(2)) {
         if(cell.textContent.startsWith("≈")) cell.title=SlotDpsPanel.estimateNote(estimateBasis,lang);
       }
+      if(compare==="dps" && idealImprints && dps!==null) tr.lastElementChild.title=SlotDpsPanel.estimateNote("imprints",lang);
       if(reason) {
         const why=node("button","dps-reason","—");
         why.type="button"; why.setAttribute("aria-label",u.name+". "+reason);
