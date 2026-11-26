@@ -3597,6 +3597,11 @@ globalThis.SlotDpsPanel = (() => {
       ? "≈ Інтервал між застосуваннями та кількість базових ударів між ними оцінено за анімацією й вибраним FPS."
       : "≈ Time between casts and the number of basic hits between them are estimated from the animation and selected FPS.";
   }
+  function damageLabel(value,lang,estimated=false){
+    if(!Number.isFinite(value)) return "—";
+    const rounded=Math.abs(value)<.5?0:value;
+    return (estimated?"≈ ":"")+rounded.toLocaleString(lang==="uk"?"uk-UA":"en-US",{maximumFractionDigits:0});
+  }
   function rateLabel(value, estimated, lang, fmt) {
     return estimated && Number.isFinite(value)
       ? "≈ "+value.toLocaleString(lang==="uk"?"uk-UA":"en-US",{maximumSignificantDigits:3})
@@ -3862,17 +3867,18 @@ globalThis.SlotDpsPanel = (() => {
     const stats = node("dl",undefined,"dps-numbers");
     const rateLabelForBuild=value=>rateLabel(value,result.estimatedTiming,lang,fmt);
     const stat = (label,value) => { const group=node("div"); group.append(node("dt",label),node("dd",value)); stats.append(group); };
-    stat("ATK",fmt(result.attack));
+    const damage=value=>damageLabel(value,lang);
+    stat("ATK",damage(result.attack));
     if(result.boostedHit!==null) {
-      stat(text("Basic hit","Базове влучання"),fmt(result.ordinaryHit));
-      stat(text("Buildup hit","Влучання Buildup"),fmt(result.boostedHit));
-    } else stat(targets>1?text("Basic hit per target","Шкода удару на ціль"):text("Basic hit","Базове влучання"),fmt(result.hit));
+      stat(text("Basic hit","Базове влучання"),damage(result.ordinaryHit));
+      stat(text("Buildup hit","Влучання Buildup"),damage(result.boostedHit));
+    } else stat(targets>1?text("Basic hit per target","Шкода удару на ціль"):text("Basic hit","Базове влучання"),damage(result.hit));
     if (result.rotationBasic!==null) {
       stat(text("Basic hits/s with skills","Базові влучання/с з уміннями"),rateLabelForBuild(result.rotationRate));
     }
     if(picks.length && result.rotationBasic!==null && result.skillDps!==null){
       const base=engine.calculate(unit,level,fps,offset,{...build,awakenings:[]});
-      const delta=(after,before)=>{const d=after-before;return (d>0?"+":"")+fmt(d);};
+      const delta=(after,before)=>{const d=after-before;return (d>=.5?"+":"")+damage(d);};
       if(base.rotationBasic!==null && base.skillDps!==null){
         stat(text("Awakenings · basic DPS change","Пробудження · зміна базового DPS"),delta(result.rotationBasic,base.rotationBasic));
         stat(text("Awakenings · skill DPS change","Пробудження · зміна DPS уміння"),delta(result.skillDps,base.skillDps));
@@ -3885,7 +3891,7 @@ globalThis.SlotDpsPanel = (() => {
       p.append(title," · ");
       if (s.inactive) p.append(s.inactive[lang==="uk"?1:0]);
       else {
-        p.append((targets>1?text("Damage per target per cast ","Шкода на ціль за застосування "):text("Damage per cast ","Шкода за застосування "))+fmt(s.castDamage??null)+". ");
+        p.append((targets>1?text("Damage per target per cast ","Шкода на ціль за застосування "):text("Damage per cast ","Шкода за застосування "))+damage(s.castDamage)+". ");
         if (s.cooldown>0) p.append(text("Base cooldown ","Базова перезарядка ")+fmt(s.cooldown)+text(" s. "," с. "));
         p.append(text("Time between casts ","Інтервал між застосуваннями ")+rateLabelForBuild(s.cadence)+text(" s. "," с. "));
         if (s.lostTime!=null) p.append(text("Basic-attack time lost per cast (equivalent) ","Еквівалент часу базових атак, втраченого за застосування ")+rateLabelForBuild(s.lostTime)+text(" s."," с."));
@@ -3913,7 +3919,7 @@ globalThis.SlotDpsPanel = (() => {
     if(result.estimatedTiming && result.rotationBasic!==null) content.append(node("small",estimateNote(result.estimateBasis,lang)));
     content.append(controls,intro,note);
   }
-  return {render,estimateNote,rateLabel,unavailableReason};
+  return {render,estimateNote,damageLabel,rateLabel,unavailableReason};
 })();
 
 </script>
@@ -5485,6 +5491,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#calc","ATK, damage and DPS are rounded to whole numbers in Unit Builder and All units.","ATK, шкоду та DPS у білдері й таблиці «Усі юніти» округлено до цілих чисел."],
     ["2026-11-26","calculator","changed","#calc","Expanded damage sources and modifiers stay open and update their DPS as you edit the build.","Розгорнуті джерела та модифікатори шкоди залишаються відкритими й показують оновлений DPS під час редагування білда."],
     ["2026-11-26","design","removed","#roster","Removed the unit counter from the All units table.","З таблиці «Усі юніти» прибрано лічильник юнітів."],
     ["2026-11-26","design","changed","#roster","Name search is on the left. Compact comparison and class filters sit beside the unit count.","Пошук за назвою тепер ліворуч. Компактні поля порівняння та класу розташовано поруч із кількістю юнітів."],
@@ -6314,7 +6321,7 @@ globalThis.SlotUpdates=(()=>{
       td.append(button);
       const unitClass=node("td","",copy.classes[u.sym]);
       SlotArt.prefix(unitClass,"class-"+u.sym);
-      const cells=compare==="damage" ? [num(attack),num(hit,0),num(cast,0)] : damage ? [basic,skillDps,dps].map((value,i)=>SlotDpsPanel.rateLabel(value,estimated || i===2 && (idealImprints || basicColossus),lang,n=>num(n,3))) : [capLabel(hard),num(target,0),num(rate,3)];
+      const cells=compare==="damage" ? [attack,hit,cast].map(value=>SlotDpsPanel.damageLabel(value,lang)) : damage ? [basic,skillDps,dps].map((value,i)=>SlotDpsPanel.damageLabel(value,lang,estimated || i===2 && (idealImprints || basicColossus))) : [capLabel(hard),num(target,0),num(rate,3)];
       tr.append(td,unitClass,...cells.map(v => node("td","",v)));
       if(compare==="dps" && estimated) for(const cell of Array.from(tr.cells).slice(2)) {
         if(cell.textContent.startsWith("≈")) cell.title=SlotDpsPanel.estimateNote(estimateBasis,lang);
