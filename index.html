@@ -752,7 +752,6 @@ tbody tr.selected {
 .roster-table td:nth-child(2),.roster-table th:nth-child(2) {
   text-align:left;
 }
-.roster-table .class-start td {border-top:2px solid var(--line)}
 .roster-table th {
   padding:0;
 }
@@ -1384,7 +1383,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
         <div class="column-tip" role="tooltip" id="rosterDpsTip" hidden></div>
         <div class="column-tip" role="tooltip" id="rosterSettingsTip" data-i18n="rosterSettingsTip" hidden>The table uses the calculator’s FPS, animation offset and the bonuses that apply to each unit.</div>
         <div class="column-tip" role="tooltip" id="rosterUnitTip" data-i18n="rosterUnitTip" hidden>Unit name and rarity. Select the unit to open its build.</div>
-        <div class="column-tip" role="tooltip" id="rosterClassTip" data-i18n="rosterClassTip" hidden>Group units by class. Within each class, the rarest units appear first.</div>
+        <div class="column-tip" role="tooltip" id="rosterClassTip" data-i18n="rosterClassTip" hidden>The class of this unit form.</div>
         <div class="column-tip" role="tooltip" id="rosterHardTip" data-i18n="rosterHardTip" hidden>The lowest attack speed (ASPD) at which this unit reaches its maximum basic hits per second with the selected animation offset and combat modifiers.</div>
         <div class="column-tip" role="tooltip" id="rosterLevelTip" data-i18n="rosterLevelTip" hidden>The first Absorb level at which this unit reaches its ASPD hard cap with the current settings.</div>
         <div class="column-tip" role="tooltip" id="rosterRateTip" data-i18n="rosterRateTip" hidden>The most basic hits this unit can land on one target per second with the current settings. Each hit counts, including a second hit from the same attack.</div>
@@ -3996,7 +3995,7 @@ globalThis.SlotDpsPanel = (() => {
     rosterHardCap: "Хардкап ASPD",
     rosterMaxHits: "Макс. влучань/с",
     rosterUnitTip: "Ім’я та рідкість юніта. Вибери юніта, щоб побачити розрахунок швидкості його атак.",
-    rosterClassTip: "Групує юнітів за класом. Усередині кожного класу найрідкісніші юніти стоять першими.",
+    rosterClassTip: "Клас юніта в цій формі.",
     rosterHardTip: "Найменше значення швидкості атаки (ASPD), за якого юніт досягає максимальної кількості базових влучань за секунду з вибраним зсувом анімації та бойовими модифікаторами.",
     rosterLevelTip: "Перший рівень Absorb, на якому юніт досягає хардкапу ASPD за поточних налаштувань.",
     rosterRateTip: "Максимальна кількість базових влучань юніта по одній цілі за секунду за поточних налаштувань. Якщо одна атака влучає двічі, враховуються обидва влучання.",
@@ -5483,6 +5482,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#roster","All units opens in alphabetical order again. Click a column heading to rank the full list by that stat.","У таблиці «Усі юніти» відновлено початковий порядок за назвою. Натисни заголовок колонки, щоб відсортувати весь список за відповідною характеристикою."],
     ["2026-11-26","calculator","changed","#roster","All units now opens grouped by class, with the rarest forms first. The DPS column shows available and required imprint slots when a build exceeds the limit. Burning Heart now boosts only the basic hit in a Volley sequence.","У таблиці «Усі юніти» форми згруповано за класом, від найрідкісніших у кожній групі. Якщо для білда бракує слотів відбитків, у колонці DPS видно доступну й потрібну кількість. Burning Heart тепер підсилює лише базовий удар у серії Volley."],
     ["2026-11-26","calculator","changed","#calc","Burning Heart and other independent item bonuses have their own rows. Versatile lists the base contribution of off-class manuals, and Engineer lists only the DPS added by each upgrade.","Burning Heart та інші самостійні бонуси предметів мають власні рядки. Versatile показує базовий внесок посібників інших класів, а Engineer — лише додатковий DPS від підсилення кожного предмета."],
     ["2026-11-26","calculator","changed","#calc","The Damage sources table now shows total DPS in its header. For multiple targets it shows both group DPS and average DPS per target.","У шапці таблиці джерел шкоди тепер показано загальний DPS. Для кількох цілей видно і DPS по групі, і середній DPS на ціль."],
@@ -5674,12 +5674,12 @@ globalThis.SlotUpdates=(()=>{
     el("calc-view").dataset.mode=builderMode;
     el("roster-mode").value=compare;
     for (const b of document.querySelectorAll(".build-modes button")) b.setAttribute("aria-pressed",String(b.dataset.mode===builderMode));
-    if (previous!==compare && !["name","class"].includes(sortColumn)) {sortColumn="class";sortAscending=true;}
+    if (previous!==compare && !["name","class"].includes(sortColumn)) {sortColumn="name";sortAscending=true;}
   }
   const levels = globalThis.SlotLevelPlan;
   let frame = 0;
   const rarityOrder = ["prism","legendary","rare","advanced","normal","special"];
-  let sortColumn = "class";
+  let sortColumn = "name";
   let sortAscending = true;
   const capsCache = new Map();
   const stepsCache = new Map();
@@ -6278,8 +6278,7 @@ globalThis.SlotUpdates=(()=>{
       // A form without a cap stays below measured values in either direction.
       if ((left == null) !== (right == null)) return left == null ? 1 : -1;
       const order = typeof left === "string" ? collator.compare(left,right) : left - right;
-      const rarity=sortColumn==="class"?rarityOrder.indexOf(a.u.grade)-rarityOrder.indexOf(b.u.grade):0;
-      return (sortAscending ? order : -order) || rarity || collator.compare(a.name,b.name) || collator.compare(a.class,b.class);
+      return (sortAscending ? order : -order) || collator.compare(a.name,b.name) || collator.compare(a.class,b.class);
     });
     for (const button of document.querySelectorAll(".roster-table [data-sort]")) {
       const header = button.closest("th");
@@ -6293,11 +6292,8 @@ globalThis.SlotUpdates=(()=>{
     if (damage) el("list-settings").textContent="LV "+num(level,0)+" · "+num(fps,2)+" FPS · "+phaseText(phase)+" · "+(uk?"Цілі ":"Targets ")+(damageBuild.targets||1);
     const infoTip=el("rosterSettingsTip");
     infoTip.textContent=damage ? (uk?"Для кожного юніта застосовано рівень і спорядження з білда. Несумісні збірки позначено рискою.":"Each unit uses the builder’s level and loadout. Ineligible builds show a dash.") : SlotStaticLocale.textFor(infoTip,lang);
-    let previousClass;
     for (const {u,hard,rate,status,level:target,attack,hit,cast,basic,skillDps,dps,reason,reasonLabel,estimated,estimateBasis,idealImprints,basicColossus} of rows) {
       const tr = node("tr",activeUnit.id === u.id ? "selected" : "");
-      if(sortColumn==="class" && previousClass && previousClass!==u.sym) tr.classList.add("class-start");
-      previousClass=u.sym;
       const td = node("td");
       const button = node("button","pick");
       button.type = "button";
