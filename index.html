@@ -1214,8 +1214,11 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
 .gear-trigger {display:flex;align-items:center;gap:.4rem;width:100%;min-height:2.15rem;padding:.25rem .5rem;border:1px solid var(--line);border-radius:5px;background:var(--deep);color:var(--ink);text-align:start;cursor:pointer}
 .gear-trigger span {overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 .gear-trigger::after {content:"";margin-inline-start:auto;border:4px solid transparent;border-top-color:var(--muted);transform:translateY(2px)}
-.gear-options {position:absolute;z-index:8;top:100%;width:max-content;min-width:100%;max-width:calc(100vw - 16px);padding:.2rem;overflow-y:auto;overscroll-behavior:contain;border:1px solid var(--line);border-radius:6px;background:var(--deep);color:var(--ink);box-shadow:0 4px 16px #0008}
-.gear-options.above {top:auto;bottom:100%}
+.gear-popup {position:absolute;z-index:8;top:100%;display:flex;flex-direction:column;width:max-content;min-width:100%;max-width:calc(100vw - 16px);padding:.2rem;border:1px solid var(--line);border-radius:6px;background:var(--deep);color:var(--ink);box-shadow:0 4px 16px #0008}
+.gear-popup.above {top:auto;bottom:100%}
+.gear-popup input {width:100%;min-width:0;padding:.4rem;font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:4px}
+.gear-options {position:relative;overflow-y:auto;overscroll-behavior:contain}
+.gear-empty {padding:.4rem;color:var(--muted)}
 .gear-options [role=option] {display:flex;align-items:center;gap:.5rem;min-height:2rem;padding:.25rem .5rem;cursor:pointer}
 .gear-options [aria-selected=true] {color:var(--gold);font-weight:600}
 .gear-options .active,.gear-options [role=option]:hover {background:var(--panel)}
@@ -3512,31 +3515,45 @@ globalThis.SlotDpsPanel = (() => {
     list.setAttribute("role","listbox");
     list.setAttribute("aria-label",label);
     button.setAttribute("aria-controls",list.id);
-    root.append(button,list);
-    let active=0, typed="", lastTyped=0;
-    function close() {
-      list.hidden=true;
+    const popup=node("div",undefined,"gear-popup"),search=node("input");
+    const uk=document.documentElement.lang==="uk";
+    search.type="search";
+    search.placeholder=uk?"Пошук за назвою":"Search by name";
+    search.setAttribute("aria-label",search.placeholder+" · "+label);
+    search.setAttribute("role","combobox");
+    search.setAttribute("aria-autocomplete","list");
+    search.setAttribute("aria-controls",list.id);
+    const message=node("div",uk?"Нічого не знайдено":"No matches","gear-empty");
+    message.setAttribute("role","status");
+    popup.hidden=true;
+    popup.append(search,list,message);
+    root.append(button,popup);
+    let active=-1;
+    function close(){
+      popup.hidden=list.hidden=true;
       list.replaceChildren();
+      search.value="";
+      search.removeAttribute("aria-activedescendant");
       button.setAttribute("aria-expanded","false");
-      button.removeAttribute("aria-activedescendant");
-      typed="";
+      search.setAttribute("aria-expanded","false");
       openPicker=null;
     }
-    function highlight(index) {
+    function highlight(index){
       list.children[active]?.classList.remove("active");
-      active=Math.max(0,Math.min(index,list.children.length-1));
+      active=Math.min(list.children.length-1,Math.max(0,index));
       const item=list.children[active];
+      if(!item){search.removeAttribute("aria-activedescendant");return;}
       item.classList.add("active");
-      button.setAttribute("aria-activedescendant",item.id);
+      search.setAttribute("aria-activedescendant",item.id);
       if(item.offsetTop<list.scrollTop) list.scrollTop=item.offsetTop;
       else if(item.offsetTop+item.offsetHeight>list.scrollTop+list.clientHeight)
         list.scrollTop=item.offsetTop+item.offsetHeight-list.clientHeight;
     }
-    function open() {
-      if(!list.hidden) return;
-      openPicker?.close();
-      openPicker={root,close};
-      for (const [id,name] of [["",empty],...options]) {
+    function filter(){
+      const query=search.value.trim().toLowerCase();
+      list.replaceChildren();
+      for(const [id,name] of [["",empty],...options]){
+        if(query && (!id || !name.toLowerCase().includes(query))) continue;
         const item=node("div",name);
         item.id=list.id+"-"+list.childElementCount;
         item.dataset.value=id;
@@ -3545,41 +3562,50 @@ globalThis.SlotDpsPanel = (() => {
         if(id) SlotArt.prefix(item,artPrefix[group]+id,"link");
         list.append(item);
       }
-      list.hidden=false;
-      button.setAttribute("aria-expanded","true");
-      const rect=button.getBoundingClientRect();
-      const below=innerHeight-rect.bottom-8;
-      const above=rect.top-8;
-      const upward=below<Math.min(list.scrollHeight,240) && above>below;
-      list.classList.toggle("above",upward);
-      list.style.maxHeight=Math.max(40,Math.min(320,upward?above:below))+"px";
-      list.style.left=Math.min(0,document.documentElement.clientWidth-8-rect.left-list.offsetWidth)+"px";
-      highlight([...list.children].findIndex(o=>o.dataset.value===selected));
+      message.hidden=!!list.childElementCount;
+      highlight(query?0:[...list.children].findIndex(o=>o.dataset.value===selected));
     }
-    function commit(item) {
+    function open(initial=""){
+      openPicker?.close();
+      openPicker={root,close};
+      popup.hidden=list.hidden=false;
+      button.setAttribute("aria-expanded","true");
+      search.setAttribute("aria-expanded","true");
+      search.value=initial;
+      filter();
+      const rect=button.getBoundingClientRect();
+      const below=innerHeight-rect.bottom-8,above=rect.top-8;
+      const upward=below<Math.min(popup.scrollHeight,240) && above>below;
+      popup.classList.toggle("above",upward);
+      popup.style.maxHeight=Math.max(80,Math.min(320,upward?above:below))+"px";
+      popup.style.left=Math.min(0,document.documentElement.clientWidth-8-rect.left-popup.offsetWidth)+"px";
+      highlight(active);
+      search.focus({preventScroll:true});
+    }
+    function commit(item){
+      if(!item) return;
       const value=item.dataset.value;
       close();
       if(value!==selected) select(value);
       else button.focus();
     }
-    button.onclick=()=>list.hidden?open():close();
-    button.onblur=()=>{if(!list.hidden) close();};
+    button.onclick=()=>popup.hidden?open():close();
+    root.onfocusout=e=>{if(!popup.hidden && !root.contains(e.relatedTarget)) close();};
     list.onmousedown=e=>e.preventDefault();
     list.onclick=e=>{const item=e.target.closest('[role="option"]');if(item) commit(item);};
-    button.onkeydown=e=>{
-      if(e.ctrlKey || e.metaKey) return;
-      if(e.key==="Escape" && !list.hidden){e.preventDefault();close();return;}
-      if(e.key==="Tab" || !["ArrowDown","ArrowUp","Home","End","Enter"," "].includes(e.key) && e.key.length!==1) return;
-      e.preventDefault();
-      const wasOpen=!list.hidden;
-      open();
-      if(e.key==="Enter" || e.key===" "){if(wasOpen) commit(list.children[active]);return;}
-      if(e.key==="ArrowDown" || e.key==="ArrowUp"){highlight(active+(e.key==="ArrowDown"?1:-1));return;}
-      if(e.key==="Home" || e.key==="End"){highlight(e.key==="Home"?0:list.children.length-1);return;}
-      const now=Date.now();
-      typed=(now-lastTyped<700?typed:"")+e.key.toLowerCase(); lastTyped=now;
-      const index=[...list.children].findIndex(item=>item.textContent.toLowerCase().startsWith(typed));
-      if(index>=0) highlight(index);
+    search.oninput=filter;
+    root.onkeydown=e=>{
+      if(e.isComposing || e.ctrlKey || e.metaKey || e.altKey) return;
+      if(e.key==="Escape" && !popup.hidden){e.preventDefault();close();button.focus();return;}
+      if(e.target===search){
+        if(e.key==="Enter"){e.preventDefault();commit(list.children[active]);}
+        if(e.key==="ArrowDown" || e.key==="ArrowUp"){
+          e.preventDefault();highlight(active+(e.key==="ArrowDown"?1:-1));
+        }
+      }else if(e.target===button && popup.hidden){
+        if(["ArrowDown","ArrowUp","Enter"," "].includes(e.key)){e.preventDefault();open();}
+        else if(e.key.length===1){e.preventDefault();open(e.key);}
+      }
     };
     return root;
   }
@@ -3753,7 +3779,7 @@ globalThis.SlotDpsPanel = (() => {
         row.append(gearPicker(group,group+i,label,group==="traits"?label+" —":text("Empty slot","Вільний слот"),
           pair?.[0] || "",options,id=>{
             if(id===pair?.[0]) return;
-            set(id,id && group==="imprints" ? engine.maximum(group,id) : 1,group+i);
+            set(id,id ? engine.maximum(group,id) : 1,group+i);
           }));
         if (pair && engine.maximum(group,pair[0])>1) {
           const rank = node("select");
@@ -5491,6 +5517,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#calc","Search traits, imprints, items and awakenings by any part of their name. Newly selected items and traits start at their maximum rank.","Риси, відбитки, предмети та пробудження можна шукати за частиною назви. Нові предмети й риси одразу отримують максимальний ранг."],
     ["2026-11-26","calculator","changed","#calc","ATK, damage and DPS are rounded to whole numbers in Unit Builder and All units.","ATK, шкоду та DPS у білдері й таблиці «Усі юніти» округлено до цілих чисел."],
     ["2026-11-26","calculator","changed","#calc","Expanded damage sources and modifiers stay open and update their DPS as you edit the build.","Розгорнуті джерела та модифікатори шкоди залишаються відкритими й показують оновлений DPS під час редагування білда."],
     ["2026-11-26","design","removed","#roster","Removed the unit counter from the All units table.","З таблиці «Усі юніти» прибрано лічильник юнітів."],
