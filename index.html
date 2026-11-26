@@ -2707,6 +2707,7 @@ globalThis.SlotDps = (() => {
         out[group][i] = [p[0], Math.max(1,Math.min(maximum(group,p[0]),rank))];
       }
     }
+    if (raw?.enlargeActive===true && out.imprints.some(p=>p?.[0]==="enlarge")) out.enlargeActive=true;
     if (Number.isSafeInteger(raw?.targetHP) && raw.targetHP>0 && raw.targetHP!==100000) out.targetHP=raw.targetHP;
     if(Number.isInteger(raw?.targets) && raw.targets>=2 && raw.targets<=5) out.targets=raw.targets;
     return out;
@@ -2751,7 +2752,7 @@ globalThis.SlotDps = (() => {
     const outward=travel/f.speed+f.launch/2+(f.speed-f.creep)**2/(2*f.brake*f.speed);
     return outward+f.turn+Math.max(f.minimumReturn,(travel+f.drift)/f.returnSpeed);
   }
-  function calculate(unit, level, fps, offset, build) {
+  function calculate(unit, level, fps, offset, build, clone=null) {
     const form = data.units[unit.id];
     const selected = group => Object.fromEntries(build[group].filter(Boolean));
     const traits = selected("traits"), items = selected("items"), imprints = selected("imprints");
@@ -2777,7 +2778,7 @@ globalThis.SlotDps = (() => {
       effects.relentless={on:true,level:rank,stacks:data.imprints.relentless.levels[rank-1].maxStacks};
     }
     const timing = SlotModifiers.evaluate(unit,effects);
-    const aspd = SlotLevelPlan.prepared(unit,level,timing);
+    const aspd = clone?.aspd ?? SlotLevelPlan.prepared(unit,level,timing);
     const cadence=SlotTiming.effectiveAt(unit,aspd,offset,{...timing,fps});
     const ordinaryRate=cadence.hits;
     let rate=ordinaryRate;
@@ -2791,6 +2792,9 @@ globalThis.SlotDps = (() => {
     for (const [id, sym] of [["33","S"],["34","M"],["35","H"],["36","D"]]) {
       if (unit.sym === sym || traits["26"]) attack *= 1 + stat(id,"atkBonus");
     }
+    const enlarge=build.enlargeActive && imprints.enlarge && data.imprints.enlarge.levels[imprints.enlarge-1];
+    if(enlarge) attack+=Math.floor(attack*enlarge.atkBoost);
+    if(clone) attack=clone.attack;
     const singleTargetAttack = attack * (1 + roll("05")/100);
     const basicBonus = stat("01","basicAttackDamageBonus") + stat("48","basicAttackBonus")
       + (unit.rangedBasic ? stat("18","basicAttackDamageBonus") : stat("64","basicAttackBonus"));
@@ -2800,7 +2804,7 @@ globalThis.SlotDps = (() => {
     const basicTargetAttack = basicAttack * (1 + roll("05")/100);
     const hit = rounded(basicTargetAttack * (1+basicBonus) * mask);
     let boostedHit=null, buildupIntervals=null;
-    const doubleShot=form.skills.includes("twilight_barrage");
+    const doubleShot=!clone && form.skills.includes("twilight_barrage");
     if (imprints.brace && rate && (rate===cadence.starts || doubleShot) && !items["53"]) {
       const ticks=Math.max(1,Math.floor(1200/aspd+.5));
       const extended=1+Math.min(15/ticks,.5);
@@ -2817,7 +2821,7 @@ globalThis.SlotDps = (() => {
     const imprint = id => data.imprints[id].levels[imprints[id]-1];
     // Full-health, stationary targets and a carrier taking no incoming damage.
     const inertImprints = ["timeless","bash","blind","block","chill","enlarge","execute","fear","knockback","lifesteal","majesty","overdrive","overlord","revival","shrink","undying_soul","self_destruct"];
-    const modeled=["colossus_descent","chain","transfer","pierce","relentless","earthquake","meteor","skyward_strike","poison","ruin","volley","shadow_clone"];
+    const modeled=["soul_split","colossus_descent","chain","transfer","pierce","relentless","earthquake","meteor","skyward_strike","poison","ruin","volley","shadow_clone"];
     for (const id of Object.keys(imprints)) {
       if (inertImprints.includes(id) || modeled.includes(id)) continue;
       if (id!=="brace" || (boostedHit===null && unit.canBasic!==false)) unresolved.add(data.imprints[id].name);
@@ -2835,6 +2839,7 @@ globalThis.SlotDps = (() => {
     let rotationBasic = null, rotationRate=null, skillDps = 0, summonDps = 0, estimatedTiming=false, estimateBasis=null;
     const skills = form.skills.map(id => {
       const s = data.skills[id];
+      if(clone) return {id,name:s.name,inactive:true,cadence:null,castDamage:0};
       const inactive = passiveConditions[id];
       const coefficients=s.hitRatios || (id==="doom_resonance" ? [s.ratio] : s.steadyRatio ? [s.steadyRatio] :
         s.pulses ? s.pulses.map(v=>v*s.beams) : s.jabRatios || SlotDpsRotations.formulas[id]);
@@ -2967,7 +2972,7 @@ globalThis.SlotDps = (() => {
     });
     if (items["40"] && skills.some(s=>!s.inactive)) unresolved.add(data.items["40"].name);
     if (skills.every(s=>s.inactive)) {rotationBasic=basic;rotationRate=rate;}
-    const primaryRate=rotationRate, bear=form.skills.includes("mountain_roar");
+    const primaryRate=rotationRate, bear=!clone && form.skills.includes("mountain_roar");
     const petRate=bear ? 1/data.skills.mountain_roar.summonPeriod : 0;
     const volleyRate=imprints.volley ? (primaryRate||0)/(doubleShot?2:1)/imprint("volley").every : 0;
     const volleyHit=imprints.volley ? rounded(basicTargetAttack*(1+basicBonus)*imprint("volley").extraHitFrac*mask) : 0;
@@ -2983,7 +2988,8 @@ globalThis.SlotDps = (() => {
       if(id==="meteor") {
         const hp=Math.round(form.hp*(1+early*.015+late*.0075)*(1+roll("02")/100)*(traits["32"]?1.5:1)*(1+stat("31","maxHpBonus"))
           *(1+(unit.sym==="H" || traits["26"]?stat("35","maxHpBonus"):0))*(stat("48","maxHpRatio")||1));
-        affected=Math.min(targets,hp<500?2:hp<1000?3:4);
+        const activeHP=clone?.hp ?? (hp+(enlarge?Math.floor(hp*enlarge.hpBoost):0));
+        affected=Math.min(targets,activeHP<500?2:activeHP<1000?3:4);
       }
       const damage=rounded(attack*stats.damageMult), frequency=attempts/(missed+1/stats.chance);
       impactRows.push([data.imprints[id].name,damage*frequency*affected/targets]);
@@ -2998,7 +3004,17 @@ globalThis.SlotDps = (() => {
       poisonRates[0]+=(primaryRate||0)+petRate+volleyRate+(skills[0].cadence && skillDps>0 ? skillHits/skills[0].cadence : 0);
     }
     const idealImprints=!!(imprints.relentless || targets>1 && (imprints.pierce || imprints.transfer));
-    let basicFactor=1;
+    let basicFactor=1, spreadPackets=[];
+    if(targets===1 && imprints.soul_split) {
+      if(primaryRate>0) spreadPackets.push([rotationBasic/primaryRate,primaryRate]);
+      if(volleyRate) spreadPackets.push([volleyHit,volleyRate]);
+      if(ruinHit) spreadPackets.push([ruinHit,1]);
+      if(quakePacket) spreadPackets.push(quakePacket);
+      if(skillDps>0 && skills[0].cadence) {
+        const hits=impactRules?.[0].cast.reduce((n,[,count])=>n+count,0) || 1;
+        spreadPackets.push([skills[0].castDamage/hits,hits/skills[0].cadence]);
+      }
+    }
     if(targets>1) {
       const id=form.skills[0], s=data.skills[id];
       const skillLimits={counter_stance:1,ironwall_challenge:1,spear_cyclone:3,root_drain:3,mountain_roar:1,legion_of_the_dead:1,
@@ -3006,7 +3022,7 @@ globalThis.SlotDps = (() => {
         arcane_unleashing:1,flash_barrage:1,berserk_axe:1,deadly_bullet:1,
         eclipse_snipe:1,shatter_cannon:1,devouring_arrow:1,triple_shot:1,cataclysm_flurry:1,
         celestial_return:1,wings_of_victory:1,healing_sanctuary:1,prophetic_mirror:1,ruin_tremor:1};
-      const rule=impactRules?.[targets-1];
+      const rule=impactRules?.[Math.min(5,targets)-1];
       const primaryDps=rotationBasic;
       const basicLimit=rule ? rule.basic.reduce((sum,[,count])=>sum+count,0) : id==="doom_resonance"?3:Object.hasOwn(skillLimits,id)?1:null;
       let castHits=rule?.cast;
@@ -3027,6 +3043,7 @@ globalThis.SlotDps = (() => {
         if(skills[0].inactive || skills[0].castDamage===0) castHits=[];
         else if(coefficients) castHits=coefficients.map(ratio=>[ratio,Math.min(targets,skillLimits[id])]);
       }
+      if(clone) castHits=[];
       const castGroup=castHits && (skills[0].inactive || skills[0].castDamage!==null)
         ? castHits.reduce((sum,[ratio,count])=>sum+count*rounded(attack*ratio),0) : null;
       if(basicLimit===null || castGroup===null) {
@@ -3099,6 +3116,7 @@ globalThis.SlotDps = (() => {
           for(let i=0;i<affected;i++) poisonRates[i]+=hits/(affected*skills[0].cadence);
         }
         if(spreadKnown && (imprints.transfer || imprints.chain)) {
+          spreadPackets=packets;
           const extra=spreadDamage(packets,targets,imprints.transfer && imprint("transfer"),imprints.chain && imprint("chain"),rows);
           // In a group, choose reachable neighbours from the same cluster as the eligible direct hits.
           const direct=poisonRates.filter(r=>r>0).length;
@@ -3109,8 +3127,9 @@ globalThis.SlotDps = (() => {
       if(traits["05"]) unresolved.add(data.traits["05"].name);
     }
     if(imprints.colossus_descent) {
-      const colossusAttack=Math.max(1,Math.floor(attack*imprint("colossus_descent").atkFrac));
-      rows.push([data.imprints.colossus_descent.name,colossusAttack/1.2/targets]);
+      const stats=imprint("colossus_descent"), base=Math.max(1,Math.floor(attack*stats.atkFrac));
+      const special=Math.floor(base*stats.skillDmg)*Math.min(targets,stats.skillTargets);
+      rows.push([data.imprints.colossus_descent.name,((stats.skillEvery-1)*base+special)/(stats.skillEvery*1.2*targets)]);
     }
     rows.push(...impactRows);
     if(imprints.volley) rows.push(["Volley",volleyRate*volleyHit/targets]);
@@ -3120,15 +3139,44 @@ globalThis.SlotDps = (() => {
       rows.push(["Poison",tick*poisonRates.reduce((sum,r)=>sum+poisonTicks(r,stats),0)/targets]);
       estimatedProcs=true;
     }
-    if(imprints.shadow_clone) {
-      // The clone copies combat stats and other eligible imprints but has no innate skill.
-      const copiesEffect=Object.keys(imprints).some(id=>id!=="shadow_clone" && !inertImprints.includes(id));
-      if(copiesEffect || !unit.canBasic || rate===null || basicFactor===null) unresolved.add("Shadow Clone");
-      else {
-        const stats=imprint("shadow_clone"), cloneHit=Math.max(1,Math.floor(attack*stats.atkFrac));
-        rows.push(["Shadow Clone",rate*cloneHit*basicFactor*stats.dur/(stats.dur+stats.respawn)]);
-        estimatedProcs=true;
+    // Only extra damage contacts count when the soul occupies another target slot.
+    // Forwarding that damage does not start another chain of hit effects.
+    const directGroup=((rotationBasic||0)+(skillDps||0)+impactRows.reduce((n,row)=>n+row[1],0)
+      +ruinHit+rows.filter(([name])=>["Pierce","Colossus Descent"].includes(name)).reduce((n,row)=>n+row[1],0))*targets;
+    if(imprints.soul_split) {
+      const stats=imprint("soul_split");
+      const uptime=primaryRate>0 ? Math.min(1,stats.duration*primaryRate/Math.ceil(stats.icd*primaryRate)) : 0;
+      const extra=calculate(unit,level,fps,offset,{...build,targets:targets+1,
+        imprints:build.imprints.filter(p=>p && p[0]!=="soul_split" && p[0]!=="shadow_clone")},clone);
+      // An available secondary hit can land on the soul. Forwarded damage produces no new rolls.
+      let secondary=0;
+      for(const [damage,frequency] of spreadPackets) {
+        if(imprints.transfer && targets<=imprint("transfer").spreadTargets)
+          secondary+=frequency*rounded(damage*imprint("transfer").spreadFrac);
+        if(imprints.chain && targets<=imprint("chain").bounces)
+          secondary+=frequency*imprint("chain").chance*rounded(10*imprint("chain").bounceDamageFrac);
       }
+      rows.push(["Soul Split",uptime*(Math.max(0,extra.directGroup-directGroup)/targets+secondary)]);
+      estimatedProcs=true;
+    }
+    if(imprints.shadow_clone) {
+      const stats=imprint("shadow_clone"), uptime=stats.dur/(stats.dur+stats.respawn);
+      const inherited=build.imprints.filter(p=>p && !["shadow_clone","self_destruct"].includes(p[0]));
+      const hpBase=Math.round(form.hp*(1+early*.015+late*.0075)*(1+roll("02")/100)*(traits["32"]?1.5:1)
+        *(1+stat("31","maxHpBonus"))*(1+(unit.sym==="H" || traits["26"]?stat("35","maxHpBonus"):0))*(stat("48","maxHpRatio")||1));
+      const copy=calculate(unit,level,fps,offset,{targets,traits:[],items:[],imprints:inherited,targetHP:build.targetHP},
+        {attack:Math.max(1,Math.floor(attack*stats.atkFrac)),aspd,hp:Math.floor((hpBase+(enlarge?Math.floor(hpBase*enlarge.hpBoost):0))*stats.hpFrac)});
+      if(copy.total===null) unresolved.add("Shadow Clone");
+      else {
+        let damage=copy.total;
+        if(imprints.poison) {
+          const poison=imprint("poison"), tick=copy.poisonTick;
+          damage-=copy.rows.find(([name])=>name==="Poison")[1];
+          damage+=tick*poisonRates.reduce((sum,r,i)=>sum+poisonTicks(r+copy.poisonRates[i],poison)-poisonTicks(r,poison),0)/targets;
+        }
+        rows.push(["Shadow Clone",damage*uptime]);
+      }
+      estimatedProcs=true;
     }
     if(imprints.volley || imprints.ruin && form.skills.includes("doom_resonance")) estimatedProcs=true;
     if(estimatedProcs) {
@@ -3136,7 +3184,7 @@ globalThis.SlotDps = (() => {
       estimateBasis=estimateBasis || "proc";
     }
     const total=rotationBasic===null || skillDps===null || unresolved.size ? null : rows.reduce((sum,row)=>sum+row[1],rotationBasic+skillDps+summonDps);
-    return {attack,aspd,rate,hit:unit.canBasic===false || basicFactor===null ? null : meanHit*basicFactor,boostedHit,ordinaryHit:hit,basic,rotationBasic,rotationRate,skillDps,summonDps,rows,skills,total,estimatedTiming,groupDps:total===null?null:total*targets,
+    return {directGroup,poisonRates,attack,aspd,rate,hit:unit.canBasic===false || basicFactor===null ? null : meanHit*basicFactor,boostedHit,ordinaryHit:hit,basic,rotationBasic,rotationRate,skillDps,summonDps,rows,skills,total,estimatedTiming,groupDps:total===null?null:total*targets,
       poisonTick:imprints.poison ? rounded((build.targetHP||100000)*imprint("poison").maxHPFrac) : null,
       basicColossus:!!imprints.colossus_descent,idealImprints,estimateBasis,unresolved:[...unresolved]};
   }
@@ -3337,6 +3385,18 @@ globalThis.SlotDpsPanel = (() => {
           row.append(rank);
         }
         box.append(row);
+        if(group==="imprints" && pair?.[0]==="enlarge") {
+          const label=node("label"), toggle=node("input");
+          toggle.type="checkbox";
+          toggle.checked=!!build.enlargeActive;
+          toggle.dataset.focus="enlarge-active";
+          toggle.onchange=()=>{
+            onChange({...build,enlargeActive:toggle.checked});
+            panel.querySelector('[data-focus="enlarge-active"]')?.focus();
+          };
+          label.append(toggle,text(" Always active"," Завжди активний"));
+          box.append(label);
+        }
       }
       controls.append(box);
     }
@@ -3392,7 +3452,9 @@ globalThis.SlotDpsPanel = (() => {
     warning.hidden=!result.unresolved.length;
     const content=panel.querySelector(".dps-content");
     content.replaceChildren(targetLabel,stats,skills,warning);
-    if(result.basicColossus) content.append(node("small",text("Colossus DPS counts one basic hit every 1.2 s on one target. Its fifth-hit area strike is excluded.","DPS Колоса враховує одне базове влучання по одній цілі кожні 1,2 с. Удар по площі на п’ятій атаці пропущено.")));
+    if(build.imprints.some(p=>p?.[0]==="soul_split")) content.append(node("small",text("Soul Split assumes the soul is within reach alongside its body. Only extra contacts during its lifetime add group damage.","Soul Split припускає, що тіло й душа поруч. DPS групи зростає лише від додаткових влучань, поки душа активна.")));
+    if(build.imprints.some(p=>p?.[0]==="shadow_clone")) content.append(node("small",text("Shadow Clone includes the copy’s basic attacks and estimated imprint damage, averaged over its lifetime and respawn.","Рядок Shadow Clone включає базові атаки копії та оцінку шкоди її відбитків з урахуванням часу до повторної появи.")));
+    if(result.basicColossus) content.append(node("small",text("Colossus cycle estimate: four single-target hits and one area strike every 6 s.","Оцінка DPS Колоса враховує чотири удари по одній цілі та один удар по площі за 6 с.")));
     if(build.imprints.some(pair=>pair?.[0]==="timeless")) content.append(node("small",text("Timeless is treated as crowd control. DPS uses the ordinary attack rotation.","Timeless враховано як контроль. Для DPS використано звичайний цикл атак.")));
     if(result.idealImprints) content.append(node("small",estimateNote("imprints",lang)));
     if(targets>1 && build.imprints.some(pair=>pair?.[0]==="chain")) content.append(node("small",text(
@@ -4975,6 +5037,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#calc","Enlarge can stay active for the whole build. Colossus DPS includes its area strike. Soul Split estimates extra hits during soul uptime, and Shadow Clone includes copied imprints.","Для Enlarge можна ввімкнути постійний ефект. DPS Колоса враховує удар по площі, Soul Split — додаткові влучання під час дії душі, а Shadow Clone — скопійовані відбитки."],
     ["2026-11-26","calculator","changed","#calc","Colossus Descent adds the Colossus’s single-target basic DPS. Timeless uses the ordinary attack rotation.","Colossus Descent додає DPS базових атак Колоса по одній цілі. Для Timeless використовується звичайний цикл атак."],
     ["2026-11-26","calculator","changed","#calc","New imprints start at rank V. The builder estimates Poison, Volley, Ruin, area imprints and Shadow Clone for more builds. In a group, each imprint’s damage row shows DPS per target.","Нові відбитки починають із V рангу. Білдер оцінює Poison, Volley, Ruin, відбитки зі шкодою по площі та Shadow Clone для більшої кількості білдів. Для групи в рядку кожного відбитка показано DPS на ціль."],
     ["2026-11-26","mechanics","added","#guide?id=im-chain","Added a Chain bug report. Its bounces use 10 ATK for ordinary player units, even at high Absorb levels.","Chain позначено як баг. Для відскоків звичайних юнітів гравця береться 10 ATK навіть на високих рівнях Absorb."],
