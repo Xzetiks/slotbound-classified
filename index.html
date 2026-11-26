@@ -1227,6 +1227,7 @@ a.entity-mention:hover,a.entity-mention:focus-visible {color:var(--mint);text-de
 .dps-numbers {display:flex;flex-wrap:wrap;gap:1rem 2rem;margin:1rem 0 .4rem}
 .dps-numbers dt,.dps-content small {font-size:.86rem;color:#aabbbd}
 .dps-numbers dd {font-size:1.35rem;font-weight:700;margin:.15rem 0 0}
+.dps-breakdown .dps-total {font-weight:700;background:rgba(255,204,96,.07)}
 .dps-skills p,.dps-status {margin:.65rem 0 0}
 
 .build-modes {display:flex;gap:.35rem;flex-wrap:wrap;margin:0 0 1rem}
@@ -3631,10 +3632,18 @@ globalThis.SlotDpsPanel = (() => {
           .map(([name,value])=>[name,value===null?null:value*count]);
       }
       rows=rows.filter(([,v])=>visible(v));
-      if(!rows.length){body.append(node("small",text("No damage to show.","Немає шкоди для відображення.")));return;}
+      if(showChanges && !rows.length){body.append(node("small",text("No damage to show.","Немає шкоди для відображення.")));return;}
       const table=node("table"),header=table.createTHead().insertRow(), signed=v=>(showChanges && v>=.5?"+":"")+integer.format(Math.abs(v)<.5?0:v);
       for(const title of [showChanges?text("Modifier","Модифікатор"):text("Source","Джерело"),...(count>1?[text("Group DPS","DPS групи"),text("DPS/target","DPS/ціль")]:["DPS"])])
         header.append(node("th",title));
+      if(!showChanges){
+        const total=table.tHead.insertRow();
+        total.className="dps-total";
+        const label=node("th",text("Total DPS","Загальний DPS"));label.scope="row";total.append(label);
+        const estimated=result.estimatedTiming || result.idealImprints || result.basicColossus;
+        for(const value of count>1?[result.groupDps,result.total]:[result.total])
+          total.insertCell().textContent=Number.isFinite(value)?(estimated?"≈ ":"")+integer.format(value):"—";
+      }
       const tbody=table.createTBody(), max=Math.max(1,...rows.map(([,v])=>Math.abs(v||0)));
       for(const [name,v] of [...rows].sort((a,b)=>Math.abs(b[1]||0)-Math.abs(a[1]||0))){
         const row=tbody.insertRow(),label=node("th",name);label.scope="row";row.append(label);
@@ -3839,9 +3848,6 @@ globalThis.SlotDpsPanel = (() => {
     const stats = node("dl",undefined,"dps-numbers");
     const rateLabelForBuild=value=>rateLabel(value,result.estimatedTiming,lang,fmt);
     const stat = (label,value) => { const group=node("div"); group.append(node("dt",label),node("dd",value)); stats.append(group); };
-    const totalLabel=value=>rateLabel(value,result.estimatedTiming || result.idealImprints || result.basicColossus,lang,fmt);
-    stat(text("Average DPS per target","Середній DPS на ціль"),totalLabel(result.total));
-    if(targets>1) stat(text("Group DPS","DPS по групі"),totalLabel(result.groupDps));
     stat("ATK",fmt(result.attack));
     if(result.boostedHit!==null) {
       stat(text("Basic hit","Базове влучання"),fmt(result.ordinaryHit));
@@ -3849,9 +3855,6 @@ globalThis.SlotDpsPanel = (() => {
     } else stat(targets>1?text("Basic hit per target","Шкода удару на ціль"):text("Basic hit","Базове влучання"),fmt(result.hit));
     if (result.rotationBasic!==null) {
       stat(text("Basic hits/s with skills","Базові влучання/с з уміннями"),rateLabelForBuild(result.rotationRate));
-      stat(text("Basic DPS during rotation","DPS базових атак з уміннями"),rateLabelForBuild(result.rotationBasic));
-      stat(text("Skill DPS","DPS уміння"),rateLabelForBuild(result.skillDps));
-      if(result.summonDps) stat(text("Summon DPS","DPS призваних істот"),fmt(result.summonDps));
     }
     if(picks.length && result.rotationBasic!==null && result.skillDps!==null){
       const base=engine.calculate(unit,level,fps,offset,{...build,awakenings:[]});
@@ -5470,6 +5473,7 @@ globalThis.SlotGuide=(()=>{
 /* Keep previous releases in this list. New changes go first, even on the same date. */
 globalThis.SlotUpdates=(()=>{
   const changes=[
+    ["2026-11-26","calculator","changed","#calc","The Damage sources table now shows total DPS in its header. For multiple targets it shows both group DPS and average DPS per target.","У шапці таблиці джерел шкоди тепер показано загальний DPS. Для кількох цілей видно і DPS по групі, і середній DPS на ціль."],
     ["2026-11-26","calculator","changed","#calc","Set earned stacks for Calculated Luck and Combat Experience. Expand DPS rows to see included contributions, including Chain and Transfer triggers. Tables show whole DPS and omit zero rows.","Задавайте стаки Calculated Luck і Combat Experience. Розгорніть рядок DPS, щоб побачити враховані складові, зокрема взаємні спрацювання Chain і Transfer. Таблиці показують цілі числа та приховують нульові рядки."],
     ["2026-11-26","calculator","changed","#guide?id=awake-draw","Awakening rank now follows your active picks automatically. The awakening guide explains when all selected ranks increase.","Ранг пробуджень тепер залежить від кількості активних виборів. У довіднику пояснено, коли підвищується ранг усіх вибраних пробуджень."],
     ["2026-11-26","calculator","changed","#calc","Direct hits such as Transfer and Ruin appear only in Damage sources. Damage modifiers shows bonuses already included in the unit’s attacks, skills and summons.","Transfer, Ruin та інші джерела власних влучань показано лише в «Джерелах шкоди». «Модифікатори шкоди» показують бонуси, вже враховані в атаках, уміннях і призваних істотах."],
